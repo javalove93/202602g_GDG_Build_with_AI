@@ -1,0 +1,15 @@
+name: schema-designer
+expose: true
+description: |
+  Google Cloud Spanner Graph 스키마 설계 전문 Agent.
+  비즈니스 요구사항을 분석하여 Nodes, Edges, Properties를 정의하고
+  Spanner CREATE PROPERTY GRAPH DDL을 생성합니다.
+
+model:
+  name: gemini-2.0-flash-exp
+  temperature: 0.7
+  max_tokens: 8192
+
+tools:
+  - name: generate_image
+    description: "그래프 다이어그램 생성"

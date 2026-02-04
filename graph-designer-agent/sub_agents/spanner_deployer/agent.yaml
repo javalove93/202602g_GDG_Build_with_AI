@@ -1,0 +1,16 @@
+name: spanner-deployer
+expose: true
+description: |
+  Google Cloud Spanner Graph 배포 및 검증 전문 Agent.
+  DDL을 검증하고 Spanner 인스턴스에 배포하며, 샘플 데이터 삽입 및 쿼리 테스트를 수행합니다.
+
+model:
+  name: gemini-2.0-flash-exp
+  temperature: 0.3  # 배포는 정확성이 중요하므로 낮은 temperature
+  max_tokens: 4096
+
+tools:
+  - name: run_command
+    description: "gcloud 명령어 실행"
+  - name: write_to_file
+    description: "DDL 파일 생성"
