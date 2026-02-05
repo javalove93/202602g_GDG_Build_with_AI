@@ -9,6 +9,15 @@
 
 ---
 
+## ⚡ 빠른 시작 추천 (Best Practices)
+
+효과적인 에이전트 개발을 위해 다음 두 개의 관리 파일을 세션 시작 시 생성하는 것이 강력히 권장됩니다. 이 파일들을 통해 작업 진행 상황을 기록하고, 에이전트와 컨텍스트를 공유하여 개발 효율을 높일 수 있습니다.
+
+1.  **[`impl_context.md`](file:///home/jerryj/git/202602g_GDG_Build_with_AI/impl_context.md)**: 현재 구현된 기능, 설계 결정 사항, 프로젝트 상태를 요약합니다. 새 세션 시작 시 이 파일을 에이전트에게 읽게 하면 즉시 문맥을 파악할 수 있습니다.
+2.  **[`troubleshooting.md`](file:///home/jerryj/git/202602g_GDG_Build_with_AI/troubleshooting.md)**: 발생한 에러와 그 해결 방법을 기록합니다. 비슷한 문제가 반복될 때 빠르게 대응할 수 있으며, 에이전트가 같은 실수를 반복하지 않도록 가이드하는 용도로 사용합니다.
+
+---
+
 ## 🔍 냉정한 분석 및 의견
 
 ### ✅ Agent 전환의 적합성
@@ -117,26 +126,30 @@ graph TB
 
 ```
 graph-designer-agent/
-├── main_agent/                      # Main Agent 디렉토리
-│   ├── root_agent.yaml              # Main Agent 설정
-│   └── prompts/
-│       └── system.md                # Main Agent 시스템 프롬프트
-├── sub_agents/                      # Sub-Agents 디렉토리
+├── .env                          # 환경 변수 (GCP 및 Spanner 설정)
+├── .adk/                         # ADK 내부 캐시 (문제 발생 시 삭제 권장)
+├── main_agent/                   # Main Agent 디렉토리
+│   ├── root_agent.yaml           # Main Agent 설정
+│   └── __init__.py               # 패키지 구성을 위한 파일
+├── sub_agents/                   # Sub-Agents 디렉토리
+│   ├── __init__.py
 │   ├── schema_designer/
-│   │   ├── root_agent.yaml          # Sub-Agent 1 설정
-│   │   └── prompts/
-│   │       └── system.md
+│   │   ├── root_agent.yaml       # Sub-Agent 1 설정
+│   │   ├── __init__.py
+│   │   └── tools/
+│   │       ├── __init__.py
+│   │       └── mermaid_renderer.py # 시각화 도구 (Phase 2)
 │   └── spanner_deployer/
-│       ├── root_agent.yaml          # Sub-Agent 2 설정
-│       ├── prompts/
-│       │   └── system.md
-│           └── spanner_client.py
-├── scripts/                         # 보조 스크립트
-│   ├── show_spanner.sh              # Spanner 설정 정보 확인
-│   ├── query_spanner.sh             # DB 조회 및 쿼리 실행 (Wrapper)
-│   └── query_spanner.py             # DB 조회 및 쿼리 실행 (Python)
-├── examples/                        # 예시 파일
-├── scripts/                         # 인프라 스크립트
+│       ├── root_agent.yaml       # Sub-Agent 2 설정
+│       ├── __init__.py
+│       └── tools/
+│           ├── __init__.py
+│           └── spanner_client.py   # Spanner 조작 도구
+├── scripts/                      # 보조 스크립트
+│   ├── show_spanner.sh           # Spanner 설정 정보 확인
+│   ├── query_spanner.sh          # DB 조회 및 쿼리 실행 (Wrapper)
+│   ├── query_spanner.py          # DB 조회 및 쿼리 실행 (Python)
+│   └── setup_spanner.sh          # Spanner 인프라 생성 (Enterprise 필수)
 └── README.md
 ```
 
@@ -245,6 +258,12 @@ tools:
   - name: sub_agents.spanner_deployer.tools.spanner_client.deploy_spanner_ddl
   - name: sub_agents.spanner_deployer.tools.spanner_client.execute_spanner_query
 ```
+
+> [!TIP]
+> **ADK 도구 등록 유의사항**: 
+> - `python_file`이나 `description` 필드는 YAML에서 지원되지 않으므로 제거해야 합니다.
+> - `name` 필드에는 반드시 도구 함수의 **정규화된 Python 이름(Fully Qualified Name)**을 사용하세요.
+> - 모든 디렉토리에 `__init__.py` 파일을 추가하여 Python 패키지로 인식되게 해야 합니다.
 
 #### Sub-Agent 호출 방식
 
@@ -890,9 +909,9 @@ gcloud services enable run.googleapis.com
 
 | 에디션 | 100 PU 시간당 비용 | 월 예상 비용 (24/7) | 특징 |
 |--------|-------------------|---------------------|------|
-| **Standard** | **$0.117** | **약 $84** | 기본적인 가용성 및 성능 제공 |
-| **Enterprise** | $0.160 | 약 $115 | 가용성 보장 및 관리 기능 강화 |
-| **Enterprise Plus** | $0.222 | 약 $160 | 최고 수준의 가용성 및 성능 보장 |
+| **Standard** | $0.117 | 약 $84 | **Graph 기능 미지원** |
+| **Enterprise** | **$0.160** | **약 $115** | **Graph 지원 (권장)** |
+| **Enterprise Plus** | $0.222 | 약 $160 | 최고 사양, Graph 지원 |
 
 #### 리전별 비용 차이
 
@@ -901,10 +920,9 @@ gcloud services enable run.googleapis.com
 - **europe-west1 (벨기에)**: 약 $0.10/시간
 
 **💡 비용 절감 팁:**
-- **테스트용**: Standard 에디션 + 100 PU 사용 (시간당 $0.117)
-- **단기 실습**: 사용 후 즉시 인스턴스 삭제 (`cleanup_spanner.sh` 실행)
-- **장기 사용**: 필요시에만 인스턴스 시작/중지
-- **리전 선택**: 지연시간이 중요하지 않다면 us-central1 사용 고려
+- **테스트용**: Enterprise 에디션 + 100 PU 사용 (시간당 $0.160)
+- **리전 선택**: us-central1 사용 시 약 $0.09/시간으로 더 저렴하게 이용 가능
+- **사용 후 삭제**: 실습 종료 후 반드시 `cleanup_spanner.sh`를 실행하여 인스턴스를 삭제하세요.
 
 **⚠️ 주의사항:**
 - Spanner는 **시간 단위로 과금**됩니다 (분 단위 과금 아님)
@@ -936,7 +954,8 @@ REGION=${GCP_REGION:-"us-central1"}
 INSTANCE_ID=${SPANNER_INSTANCE_ID:-"graph-designer-instance"}
 DATABASE_ID=${SPANNER_DATABASE_ID:-"telecom-graph-db"}
 CONFIG="regional-${REGION}"
-PROCESSING_UNITS=100  # 최소 비용 (약 $0.90/hour)
+EDITION="ENTERPRISE"   # Spanner Graph 필수 에디션
+PROCESSING_UNITS=100  # 최소 비용 (Enterprise 기준 약 $0.09/hour for us-central1)
 
 echo "========================================"
 echo "Spanner 인프라 설정 시작"
@@ -945,24 +964,31 @@ echo "프로젝트: $PROJECT_ID"
 echo "리전: $REGION"
 echo "인스턴스: $INSTANCE_ID"
 echo "데이터베이스: $DATABASE_ID"
+echo "에디션: $EDITION"
 echo "Processing Units: $PROCESSING_UNITS"
 echo "========================================"
 
 # 1. Spanner API 활성화 확인
-echo "\n[1/4] Spanner API 활성화 확인..."
+echo -e "\n[1/4] Spanner API 활성화 확인..."
 gcloud services enable spanner.googleapis.com --project=$PROJECT_ID
 
 # 2. Spanner 인스턴스 생성 (이미 존재하면 스킵)
-echo "\n[2/4] Spanner 인스턴스 생성 중..."
-if gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID &>/dev/null; then
-    echo "✓ 인스턴스 '$INSTANCE_ID'가 이미 존재합니다."
+echo -e "\n[2/4] Spanner 인스턴스 생성 중..."
+EXISTING_EDITION=$(gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID --format="value(edition)" 2>/dev/null || echo "")
+
+if [ -n "$EXISTING_EDITION" ]; then
+    echo "✓ 인스턴스 '$INSTANCE_ID'가 이미 존재합니다. (에디션: $EXISTING_EDITION)"
+    if [[ "$EXISTING_EDITION" == "STANDARD" ]]; then
+        echo "⚠️  경고: 현재 인스턴스가 STANDARD 에디션입니다. Spanner Graph는 Enterprise 이상이 필요합니다."
+    fi
 else
     gcloud spanner instances create $INSTANCE_ID \
         --config=$CONFIG \
-        --description="Graph Designer Agent - Minimum Cost Instance" \
+        --description="Graph Designer Instance" \
         --processing-units=$PROCESSING_UNITS \
+        --edition=$EDITION \
         --project=$PROJECT_ID
-    echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료"
+    echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료 ($EDITION 에디션)"
 fi
 
 # 3. Spanner 데이터베이스 생성 (이미 존재하면 스킵)
