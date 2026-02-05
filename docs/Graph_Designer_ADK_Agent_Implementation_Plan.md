@@ -1,5 +1,7 @@
 # Google ADK Agent 구현 계획서: Graph Designer AI
 
+## Last modified: 2025-02-05 10:25
+
 ## 📋 프로젝트 개요
 
 **원본 프로그램**: AI Graph Designer (Vibe Prototyping 기반)
