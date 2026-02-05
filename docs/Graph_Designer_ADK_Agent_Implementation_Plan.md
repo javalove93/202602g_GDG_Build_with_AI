@@ -178,6 +178,9 @@ graph-designer-agent/
 
 ## 📝 구현 계획
 
+> [!IMPORTANT]
+> **ADK Agent 상세 스펙 참고**: Agent 구현 시 상세한 스펙과 사용법은 [공식 ADK 문서](https://google.github.io/adk-docs/)를 반드시 참고하세요.
+
 ### Main Agent: Orchestrator
 
 #### System Prompt 설계
@@ -1255,6 +1258,9 @@ examples/
 ---
 
 ### 핵심 파일 상세 명세
+
+> [!IMPORTANT]
+> **Agent 구현 시 필수 참고**: 상세한 Agent 스펙은 [Google ADK Documentation](https://google.github.io/adk-docs/)을 확인하여 최신 규격을 준수하세요.
 
 #### 1. Main Agent 설정
 
