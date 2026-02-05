@@ -56,14 +56,16 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 GCP Spanner Gra
 ### 2️⃣ 구현 시작
 
 ```bash
-# 1. 저장소 클론
-git clone <this-repo-url>
+# 1. 저장소 클론 및 브랜치 생성
+git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
 cd 202602g_GDG_Build_with_AI
 
-# 2. 구현 계획서 열기
-cat docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
+# ⚠️ 권장: 개발 전용 브랜치(impl)를 만들어 작업을 시작하세요
+git checkout -b impl
 
-# 3. 계획서의 "환경 설정 및 의존성" 섹션부터 순서대로 따라하기
+# 2. 구현 계획서 열기
+# 계획서의 "환경 설정 및 의존성" 섹션부터 순서대로 따라하기
+cat docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
 ```
 
 ---
@@ -86,23 +88,16 @@ cat docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
 
 ---
 
-## 🎯 구현 워크플로우
+### Step 1: 개발 환경 준비 (Session Management)
 
-### Step 1: 계획서 읽기
-```bash
-# 구현 계획서 전체 읽기
-less docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
-```
+성공적인 에이전트 개발을 위해 다음 두 파일을 먼저 생성하고 에이전트에게 읽히는 것을 권장합니다:
 
-**주요 섹션:**
-1. 프로젝트 개요 및 아키텍처 (1-662줄)
-2. 환경 설정 및 의존성 (665줄~)
-3. Spanner 인프라 자동화 (828줄~)
-4. 입력 데이터 형식 (1020줄~)
-5. 완전한 프로젝트 구조 (1178줄~)
-6. End-to-End 실행 가이드 (1975줄~)
+- **`impl_context.md`**: 현재 구현 상태와 설계 결정을 기록
+- **`troubleshooting.md`**: 발생한 에러와 해결법 기록
 
-### Step 2: 환경 설정
+이 파일들은 에이전트가 중단된 지점부터 다시 시작하거나, 과거의 실수를 반복하지 않도록 하는 강력한 컨텍스트가 됩니다.
+
+### Step 2: 환경 설정 및 인프라 구축
 ```bash
 # uv 설치
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -111,8 +106,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 mkdir -p graph-designer-agent
 cd graph-designer-agent
 
-# .env 파일 생성 및 설정
-# (계획서의 "환경 설정" 섹션 참조)
+# .env 파일 생성 및 설정 (계획서 참조)
+# Spanner Enterprise 에디션 인스턴스 생성
+./scripts/setup_spanner.sh
 ```
 
 ### Step 3: Agent 구현
