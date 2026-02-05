@@ -67,3 +67,8 @@ module 'google.adk.tools' has no attribute 'built_in_code_execution' (또는 cod
   1. 도구가 포함된 디렉토리에 `__init__.py` 파일을 추가하여 Python 패키지로 구성함.
   2. `root_agent.yaml`에서 도구 경로 대신 정규화된 이름(Fully Qualified Name)을 사용함.
      - 예: `sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid`
+
+### 5.5 Spanner Graph 에디션 제한 사항
+- **증상**: DDL 배포 시 오류 발생 또는 테이블이 생성되지 않음.
+- **원인**: **Spanner Graph 기능은 'Standard' 에디션에서는 지원되지 않습니다.** 반드시 'Enterprise' 또는 'Enterprise Plus' 에디션을 사용해야 합니다.
+- **해결**: Spanner 인스턴스의 에디션을 Enterprise 이상으로 변경하거나, 새 인스턴스 생성 시 Enterprise 에디션을 선택해야 합니다.

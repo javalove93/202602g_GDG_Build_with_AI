@@ -24,3 +24,7 @@ instruction: |
   - 배포 전 반드시 사용자 승인 필요
   - 에러 발생 시 명확한 메시지 제공
   - 배포 성공 여부 명확히 보고
+
+tools:
+  - name: sub_agents.spanner_deployer.tools.spanner_client.deploy_spanner_ddl
+  - name: sub_agents.spanner_deployer.tools.spanner_client.execute_spanner_query

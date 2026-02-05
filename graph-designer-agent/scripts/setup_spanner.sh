@@ -16,7 +16,8 @@ REGION=${GCP_REGION:-"us-central1"}
 INSTANCE_ID=${SPANNER_INSTANCE_ID:-"graph-designer-instance"}
 DATABASE_ID=${SPANNER_DATABASE_ID:-"telecom-graph-db"}
 CONFIG="regional-${REGION}"
-PROCESSING_UNITS=100  # 최소 비용 (약 $0.09/hour for us-central1)
+EDITION="ENTERPRISE"   # Spanner Graph 필수 에디션
+PROCESSING_UNITS=100  # 최소 비용 (Enterprise 기준 약 $0.09/hour for us-central1)
 
 echo "========================================"
 echo "Spanner 인프라 설정 시작"
@@ -33,16 +34,24 @@ echo "\n[1/4] Spanner API 활성화 확인..."
 gcloud services enable spanner.googleapis.com --project=$PROJECT_ID
 
 # 2. Spanner 인스턴스 생성 (이미 존재하면 스킵)
-echo "\n[2/4] Spanner 인스턴스 생성 중..."
-if gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID &>/dev/null; then
-    echo "✓ 인스턴스 '$INSTANCE_ID'가 이미 존재합니다."
+echo -e "\n[2/4] Spanner 인스턴스 생성 중..."
+EXISTING_EDITION=$(gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID --format="value(edition)" 2>/dev/null || echo "")
+
+if [ -n "$EXISTING_EDITION" ]; then
+    echo "✓ 인스턴스 '$INSTANCE_ID'가 이미 존재합니다. (에디션: $EXISTING_EDITION)"
+    if [[ "$EXISTING_EDITION" == "STANDARD" ]]; then
+        echo "⚠️  경고: 현재 인스턴스가 STANDARD 에디션입니다. Spanner Graph는 Enterprise 이상이 필요합니다."
+        echo "   콘솔에서 에디션을 변경하거나 인스턴스를 다시 생성하세요."
+    fi
 else
+    echo "인스턴스 생성 시 '$EDITION' 에디션을 지정합니다."
     gcloud spanner instances create $INSTANCE_ID \
         --config=$CONFIG \
         --description="Graph Designer Instance" \
         --processing-units=$PROCESSING_UNITS \
+        --edition=$EDITION \
         --project=$PROJECT_ID
-    echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료"
+    echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료 ($EDITION 에디션)"
 fi
 
 # 3. Spanner 데이터베이스 생성 (이미 존재하면 스킵)

@@ -130,8 +130,11 @@ graph-designer-agent/
 │       ├── root_agent.yaml          # Sub-Agent 2 설정
 │       ├── prompts/
 │       │   └── system.md
-│       └── tools/
 │           └── spanner_client.py
+├── scripts/                         # 보조 스크립트
+│   ├── show_spanner.sh              # Spanner 설정 정보 확인
+│   ├── query_spanner.sh             # DB 조회 및 쿼리 실행 (Wrapper)
+│   └── query_spanner.py             # DB 조회 및 쿼리 실행 (Python)
 ├── examples/                        # 예시 파일
 ├── scripts/                         # 인프라 스크립트
 └── README.md
@@ -234,7 +237,13 @@ description: Google Cloud Spanner Graph 배포 및 검증 전문 Agent
 
 instruction: |
   당신은 Google Cloud Spanner Graph 배포 전문가입니다.
-  DDL을 검증하고 배포 가이드를 제공합니다.
+  DDL을 검증하여 배포하고, 쿼리를 통해 결과를 확인합니다.
+  **중요**: Spanner Graph는 Enterprise 이상 에디션에서만 지원됩니다. Standard 에디션 사용 시 배포가 실패함을 사용자에게 알리세요.
+  반드시 등록된 도구(deploy_spanner_ddl, execute_spanner_query)를 사용하여 작업을 수행하세요.
+
+tools:
+  - name: sub_agents.spanner_deployer.tools.spanner_client.deploy_spanner_ddl
+  - name: sub_agents.spanner_deployer.tools.spanner_client.execute_spanner_query
 ```
 
 #### Sub-Agent 호출 방식
@@ -448,9 +457,17 @@ def deploy_graph_schema(project_id, instance_id, database_id, ddl_statements):
 **Agent가 실행할 명령어:**
 ```markdown
 1. DDL 파일 생성 (write_to_file)
-2. gcloud 명령어 실행 (run_command)
-3. 결과 확인 및 리포트
+2. 배포 도구 실행 (deploy_spanner_ddl)
+3. 검증 쿼리 실행 (execute_spanner_query)
+4. 결과 확인 및 리포트
 ```
+
+### 보조 스크립트 활용
+
+사용자가 터미널에서 직접 환경을 확인하고 DB를 조회할 수 있도록 보조 스크립트를 제공합니다.
+
+- **show_spanner.sh**: `.env`에 설정된 프로젝트, 인스턴스, DB ID를 한 화면에 출력합니다.
+- **query_spanner.sh**: SQL 또는 GQL 쿼리를 자유롭게 실행하여 배포 결과를 검증할 수 있습니다.
 
 #### 샘플 데이터 삽입 (선택)
 
@@ -789,7 +806,7 @@ uv pip install -e ".[dev]"
 GCP_PROJECT_ID=your-gcp-project-id
 GCP_REGION=us-central1
 
-# Spanner 설정
+# Spanner 설정 (⚠️ 중요: Enterprise 이상 에디션 필수)
 SPANNER_INSTANCE_ID=graph-designer-instance
 SPANNER_DATABASE_ID=telecom-graph-db
 

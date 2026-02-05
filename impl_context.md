@@ -12,6 +12,7 @@
 - **모델명 통일**: 모든 Agent의 모델 사양을 `gemini-3-flash-preview`로 통일하여 최신 성능 활용.
 - **도구(Tools) 최적화**: 
   - 대신 **Mermaid 문법**과 **mermaid_renderer** 도구를 활용하여 실시간 이미지 렌더링 시각화 제공.
+  - **Spanner 배포 자동화**: `spanner_deployer` 에이전트에 실제 DDL 배포 및 쿼리 실행 도구(`deploy_spanner_ddl`, `execute_spanner_query`)를 탑재하여 실환경 배포 지원.
   - 도구 등록 시 정규화된 Python 이름(FQN) 사용 및 패키지 구조(`__init__.py`) 준수.
 - **디렉토리 구조**: `main_agent`를 별도 디렉토리로 분리하여 ADK의 Agent Discovery 메커니즘에 최적화.
 
@@ -19,7 +20,9 @@
 - [`docs/Graph_Designer_ADK_Agent_Implementation_Plan.md`](file:///home/jerryj/git/202602g_GDG_Build_with_AI/docs/Graph_Designer_ADK_Agent_Implementation_Plan.md): 모든 변경 사항이 반영된 최신 설계도.
 - `graph-designer-agent/main_agent/root_agent.yaml`: 오케스트레이터 설정.
 - `graph-designer-agent/sub_agents/schema_designer/root_agent.yaml`: 스키마 설계 로직 포함.
-- `graph-designer-agent/sub_agents/spanner_deployer/root_agent.yaml`: 배포 프로세스 포함.
+- `graph-designer-agent/sub_agents/spanner_deployer/root_agent.yaml`: 배포 프로세스 및 실질적인 DB 조작 도구 포함.
+- `graph-designer-agent/scripts/show_spanner.sh`: `.env` 기반 Spanner 설정 정보 확인 스크립트.
+- `graph-designer-agent/scripts/query_spanner.sh`: Spanner DB 내용 및 GQL 쿼리 조회 스크립트 (Python SDK 기반).
 
 ## 4. 향후 작업 방향
 - **프롬프트 고도화**: Spanner Graph의 복잡한 DDL 문법(특히 Edge의 키 참조)을 더 정확히 생성하도록 지침 강화.

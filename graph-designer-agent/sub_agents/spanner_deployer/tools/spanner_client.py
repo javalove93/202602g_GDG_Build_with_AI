@@ -130,6 +130,52 @@ class SpannerGraphClient:
         return len(results) > 0
 
 
+def deploy_spanner_ddl(ddl_statements: List[str]) -> str:
+    """Spanner Graph DDL을 배포합니다.
+    
+    Args:
+        ddl_statements: CREATE TABLE 또는 CREATE PROPERTY GRAPH와 같은 DDL 문장들의 리스트.
+        
+    Returns:
+        배포 결과 메시지.
+    """
+    try:
+        client = SpannerGraphClient()
+        success = client.deploy_ddl(ddl_statements)
+        return "✅ 성공적으로 DDL이 배포되었습니다." if success else "❌ DDL 배포에 실패했습니다."
+    except Exception as e:
+        return f"❌ 오류 발생: {str(e)}"
+
+def execute_spanner_query(query: str) -> str:
+    """Spanner SQL 또는 GQL 쿼리를 실행하고 결과를 반환합니다.
+    
+    Args:
+        query: 실행할 SQL 또는 GQL 쿼리 문자열.
+        
+    Returns:
+        쿼리 결과 요약 또는 에러 메시지.
+    """
+    try:
+        client = SpannerGraphClient()
+        results = client.execute_query(query)
+        if not results:
+            return "결과가 없습니다."
+        
+        # 결과를 간단한 텍스트 표 형태로 변환
+        output = []
+        if results:
+            headers = results[0].keys()
+            output.append(" | ".join(headers))
+            output.append("-" * 30)
+            for row in results[:10]:  # 최대 10개만
+                output.append(" | ".join(map(str, row.values())))
+            if len(results) > 10:
+                output.append(f"... (총 {len(results)}개 행 중 10개 표시)")
+        
+        return "\n".join(output)
+    except Exception as e:
+        return f"❌ 쿼리 실행 오류: {str(e)}"
+
 # 사용 예시
 if __name__ == "__main__":
     # 환경 변수에서 설정 로드
