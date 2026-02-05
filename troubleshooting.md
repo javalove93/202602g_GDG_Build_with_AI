@@ -71,4 +71,12 @@ module 'google.adk.tools' has no attribute 'built_in_code_execution' (또는 cod
 ### 5.5 Spanner Graph 에디션 제한 사항
 - **증상**: DDL 배포 시 오류 발생 또는 테이블이 생성되지 않음.
 - **원인**: **Spanner Graph 기능은 'Standard' 에디션에서는 지원되지 않습니다.** 반드시 'Enterprise' 또는 'Enterprise Plus' 에디션을 사용해야 합니다.
-- **해결**: Spanner 인스턴스의 에디션을 Enterprise 이상으로 변경하거나, 새 인스턴스 생성 시 Enterprise 에디션을 선택해야 합니다.
+
+## 7. 향후 해결 과제 (Future Troubleshooting Items)
+
+### 7.1 Spanner Graph DDL: Node Table 정의 누락
+- **에러 메시지**: `❌ DDL 배포 실패: 400 Error analyzing the definition of graph LGUPlusGraph: The referenced node table 'Accounts' is not defined in the property graph`
+- **의미**: Spanner Graph를 정의하는 DDL(`CREATE PROPERTY GRAPH`) 명령어에서 오류가 발생했습니다.
+- **원인**: 그래프의 엣지(Edge)가 `Accounts`라는 테이블을 참조하려고 하는데, 정작 이 그래프가 어떤 테이블로 구성되는지 정의하는 `NODE TABLES` 목록에 `Accounts`가 빠져있어서 발생합니다.
+- **상태**: 일반 테이블 생성(5개)은 성공했으나, 최종 그래프 모델 생성 단계에서 실패했습니다.
+- **조치 계획**: 에이전트가 `CREATE PROPERTY GRAPH` 문장을 생성할 때, 엣지에서 참조하는 모든 테이블이 `NODE TABLES` 목록에 반드시 포함되도록 프롬프트를 강화해야 합니다. (현재 수정은 위험성이 커서 보류)

@@ -22,8 +22,11 @@ def query_spanner(query=None):
     if not query:
         # 기본 정보 조회: 테이블 목록 및 행 수
         print(f"--- Database: {database_id} ---")
-        # 테이블 목록 조회를 위해 별도의 스냅샷 또는 개별 실행을 사용하거나
-        # 여러 쿼리를 위해 multi-use snapshot을 사용합니다.
+        tables_query = """
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = ''
+        """
         with database.snapshot(multi_use=True) as snapshot:
             results = snapshot.execute_sql(tables_query)
             tables = [row[0] for row in results]
