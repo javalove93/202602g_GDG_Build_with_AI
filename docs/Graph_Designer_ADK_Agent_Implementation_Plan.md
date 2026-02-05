@@ -2020,7 +2020,7 @@ if __name__ == "__main__":
 
 ```bash
 # 프로젝트 클론 및 이동
-git clone https://github.com/your-repo/graph-designer-agent.git
+git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
 cd graph-designer-agent
 
 # uv 환경 설정
