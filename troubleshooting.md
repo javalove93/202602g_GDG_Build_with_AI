@@ -59,3 +59,11 @@ module 'google.adk.tools' has no attribute 'built_in_code_execution' (또는 cod
   # 캐시 삭제 후 실행 권장
   rm -rf .adk && adk web main_agent
   ```
+
+### 5.4 Phase 2 도구 등록 오류 (Pydantic ValidationError)
+- **증상**: `Valiation error: LlmAgent.tools.0.python_file Extra inputs are not permitted`.
+- **원인**: ADK의 `ToolConfig` 스키마가 엄격하여 `python_file`이나 `description` 같은 필드를 허용하지 않음. 도구는 반드시 Python 모듈로서 임포트 가능해야 함.
+- **해결**:
+  1. 도구가 포함된 디렉토리에 `__init__.py` 파일을 추가하여 Python 패키지로 구성함.
+  2. `root_agent.yaml`에서 도구 경로 대신 정규화된 이름(Fully Qualified Name)을 사용함.
+     - 예: `sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid`

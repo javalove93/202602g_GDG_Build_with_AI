@@ -216,11 +216,12 @@ description: Google Cloud Spanner Graph 스키마 설계 전문 Agent
 
 instruction: |
   당신은 Google Cloud Spanner Graph 아키텍트입니다.
-  비즈니스 요구사항을 분석하여 그래프 스키마를 설계하고,
-  Mermaid 다이어그램과 Spanner DDL을 생성합니다.
+  비즈니스 요구사항을 분석하여 그래프 스키마를 설계합니다.
+  ... (중략) ...
+  시각화 단계에서 반드시 render_mermaid 도구를 호출하여 이미지 URL을 생성하세요.
 
-# tools:
-#   - name: built_in_code_execution  # 현재 SDK 버전에서 안정성 문제로 주석 처리
+tools:
+  - name: sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid
 ```
 
 **Sub-Agent 2 (sub_agents/spanner_deployer/root_agent.yaml):**
@@ -504,9 +505,15 @@ Create a professional graph database schema diagram with the following specifica
 - Professional database diagram aesthetic
 ```
 
-### 대안: Mermaid 다이어그램
+### 선택한 방식: Mermaid Rendering Service (Phase 2)
 
-마크다운에서 직접 렌더링 가능:
+텍스트 기반 Mermaid 코드를 `mermaid.ink` 서비스를 사용하여 즉시 이미지 URL로 변환하여 제공합니다.
+
+**구현 세부 사항:**
+- **도구**: `mermaid_renderer.py` (Python 도구)
+- **등록 방식**: 정규화된 이름(FQN) 사용
+  - `sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid`
+- **패키지 필수 조건**: 도구가 포함된 모든 디렉토리에 `__init__.py` 파일이 존재해야 합니다.
 
 ```mermaid
 graph TD

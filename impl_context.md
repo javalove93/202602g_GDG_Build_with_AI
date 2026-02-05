@@ -11,8 +11,8 @@
 - **시스템 지침 통합**: 별도의 `prompts/system.md` 파일을 참조하는 대신, YAML의 `instruction` 필드에 시스템 프롬프트를 직접 작성하여 관리 모델 단순화.
 - **모델명 통일**: 모든 Agent의 모델 사양을 `gemini-3-flash-preview`로 통일하여 최신 성능 활용.
 - **도구(Tools) 최적화**: 
-  - 현재 ADK 버전에서 내장 도구(`built_in_code_execution` 등)의 로드가 불안정한 이슈가 있어 일시적으로 제거.
-  - 대신 **Mermaid 문법**을 활용하여 텍스트 기반의 그래프 시각화 제공 (UI에서 지원됨).
+  - 대신 **Mermaid 문법**과 **mermaid_renderer** 도구를 활용하여 실시간 이미지 렌더링 시각화 제공.
+  - 도구 등록 시 정규화된 Python 이름(FQN) 사용 및 패키지 구조(`__init__.py`) 준수.
 - **디렉토리 구조**: `main_agent`를 별도 디렉토리로 분리하여 ADK의 Agent Discovery 메커니즘에 최적화.
 
 ## 3. 핵심 파일 요약
@@ -25,3 +25,4 @@
 - **프롬프트 고도화**: Spanner Graph의 복잡한 DDL 문법(특히 Edge의 키 참조)을 더 정확히 생성하도록 지침 강화.
 - **배포 자동화 연동**: `scripts/setup_spanner.sh`를 Agent가 사용자에게 적절히 가이드하도록 프롬프트 보완.
 - **데이터 예시 추가**: `examples/lgu_telecom_plan.md` 외에 더 다양한 비즈니스 케이스 추가.
+- **시각화 고도화 (Phase 2 완료)**: `mermaid_renderer` 도구를 통해 텍스트 기반 Mermaid 다이어그램을 실제 이미지 URL(mermaid.ink)로 변환하여 마크다운 이미지 태그로 제공.
