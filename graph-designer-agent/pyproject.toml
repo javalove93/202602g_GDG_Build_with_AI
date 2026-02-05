@@ -17,7 +17,3 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"

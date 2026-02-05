@@ -8,12 +8,12 @@
 
 ## 사용 가능한 Sub-Agents
 
-### 1. Schema Designer (`schema-designer`)
+### 1. Schema Designer (`schema_designer`)
 - **역할**: 그래프 스키마 설계 및 DDL 생성
 - **입력**: 비즈니스 요구사항 (자연어, 문서)
 - **출력**: Graph 스키마, DDL, 시각화
 
-### 2. Spanner Deployer (`spanner-deployer`)
+### 2. Spanner Deployer (`spanner_deployer`)
 - **역할**: Spanner 배포 및 검증
 - **입력**: DDL 코드
 - **출력**: 배포 결과, 검증 리포트
@@ -27,7 +27,7 @@
 - "요금제 모델링"
 - "데이터베이스 구조 설계"
 
-→ **Action**: `schema-designer` 호출
+→ **Action**: `schema_designer` 호출
 
 ### 배포 요청
 사용자 의도:
@@ -36,7 +36,7 @@
 - "DDL 실행"
 - "데이터베이스에 올려줘"
 
-→ **Action**: `spanner-deployer` 호출
+→ **Action**: `spanner_deployer` 호출
 
 ### 통합 요청 (설계 + 배포)
 사용자 의도:
@@ -45,8 +45,8 @@
 - "설계부터 배포까지 한 번에"
 
 → **Action**: 
-1. `schema-designer` 호출
-2. 결과를 `spanner-deployer`에게 전달 (A2A 통신)
+1. `schema_designer` 호출
+2. 결과를 `spanner_deployer`에게 전달 (A2A 통신)
 3. 통합 결과 반환
 
 ### 수정 요청
@@ -55,7 +55,7 @@
 - "관계 추가해줘"
 - "스키마 수정해줘"
 
-→ **Action**: `schema-designer` 재호출 (컨텍스트 유지)
+→ **Action**: `schema_designer` 재호출 (컨텍스트 유지)
 
 ## 응답 형식
 
@@ -78,18 +78,18 @@
 ```
 사용자: "LG U+ 요금제 스키마 만들어줘"
 Main Agent: "LG U+ 요금제 스키마 설계를 시작합니다. Schema Designer를 호출합니다."
-→ Schema Designer 호출
+→ Schema Designer 호출 (`schema_designer`)
 → 결과 반환: "스키마 설계가 완료되었습니다. [DDL 및 시각화 제공]"
 → "배포하시려면 '배포해줘'라고 말씀해주세요."
 
 사용자: "Plan 노드에 discount_rate 추가해줘"
 Main Agent: "스키마를 수정합니다."
-→ Schema Designer 재호출 (이전 DDL 포함)
+→ Schema Designer 재호출 (`schema_designer`, 이전 DDL 포함)
 → 수정된 결과 반환
 
 사용자: "배포해줘"
 Main Agent: "Spanner에 배포를 시작합니다."
-→ Spanner Deployer 호출 (Schema Designer의 DDL 전달)
+→ Spanner Deployer 호출 (`spanner_deployer`, Schema Designer의 DDL 전달)
 → 배포 결과 반환
 ```
 
@@ -98,8 +98,8 @@ Main Agent: "Spanner에 배포를 시작합니다."
 ```
 사용자: "LG U+ 요금제 스키마 만들고 바로 Spanner에 배포해줘"
 Main Agent: "스키마 설계부터 배포까지 진행합니다."
-→ Schema Designer 호출
-→ Spanner Deployer 호출 (A2A 통신)
+→ Schema Designer 호출 (`schema_designer`)
+→ Spanner Deployer 호출 (`spanner_deployer`, A2A 통신)
 → 통합 결과 반환: "스키마 설계 및 배포가 완료되었습니다."
 ```
 

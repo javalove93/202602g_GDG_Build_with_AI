@@ -39,7 +39,7 @@ if gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID &>/dev/n
 else
     gcloud spanner instances create $INSTANCE_ID \
         --config=$CONFIG \
-        --description="Graph Designer Agent - Minimum Cost Instance" \
+        --description="Graph Designer Instance" \
         --processing-units=$PROCESSING_UNITS \
         --project=$PROJECT_ID
     echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료"

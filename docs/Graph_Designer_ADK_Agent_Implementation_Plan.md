@@ -117,18 +117,23 @@ graph TB
 
 ```
 graph-designer-agent/
-├── agent.yaml              # Main Agent 설정
-├── prompts/
-│   └── system.md          # Main Agent 시스템 프롬프트
-├── sub_agents/            # Sub-Agents 디렉토리
+├── main_agent/                      # Main Agent 디렉토리
+│   ├── root_agent.yaml              # Main Agent 설정
+│   └── prompts/
+│       └── system.md                # Main Agent 시스템 프롬프트
+├── sub_agents/                      # Sub-Agents 디렉토리
 │   ├── schema_designer/
-│   │   ├── agent.yaml     # Sub-Agent 1 설정
+│   │   ├── root_agent.yaml          # Sub-Agent 1 설정
 │   │   └── prompts/
 │   │       └── system.md
 │   └── spanner_deployer/
-│       ├── agent.yaml     # Sub-Agent 2 설정
-│       └── prompts/
-│           └── system.md
+│       ├── root_agent.yaml          # Sub-Agent 2 설정
+│       ├── prompts/
+│       │   └── system.md
+│       └── tools/
+│           └── spanner_client.py
+├── examples/                        # 예시 파일
+├── scripts/                         # 인프라 스크립트
 └── README.md
 ```
 
@@ -182,29 +187,53 @@ graph-designer-agent/
 
 #### Agent 설정 파일
 
-**Main Agent (agent.yaml):**
+**Main Agent (main_agent/root_agent.yaml):**
 ```yaml
-name: graph-designer-main
-expose: true  # 사용자에게 노출
-description: "그래프 스키마 설계 및 Spanner 배포 통합 시스템"
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: graph_designer_main
+description: |
+  그래프 스키마 설계 및 Spanner 배포 통합 시스템.
+  비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Spanner에 배포합니다.
+
+instruction: |
+  당신은 Graph Designer AI의 메인 오케스트레이터입니다.
+  사용자의 요청을 분석하여 적절한 Sub-Agent에게 작업을 위임합니다.
 
 sub_agents:
-  - path: ./sub_agents/schema_designer
-  - path: ./sub_agents/spanner_deployer
+  - config_path: ../sub_agents/schema_designer/root_agent.yaml
+  - config_path: ../sub_agents/spanner_deployer/root_agent.yaml
 ```
 
-**Sub-Agent 1 (sub_agents/schema_designer/agent.yaml):**
+**Sub-Agent 1 (sub_agents/schema_designer/root_agent.yaml):**
 ```yaml
-name: schema-designer
-expose: true   # A2A 엔드포인트로도 노출 (선택사항)
-description: "그래프 스키마 설계 및 DDL 생성 전문 Agent"
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: schema_designer
+description: Google Cloud Spanner Graph 스키마 설계 전문 Agent
+
+instruction: |
+  당신은 Google Cloud Spanner Graph 아키텍트입니다.
+  비즈니스 요구사항을 분석하여 그래프 스키마를 설계하고,
+  Mermaid 다이어그램과 Spanner DDL을 생성합니다.
+
+# tools:
+#   - name: built_in_code_execution  # 현재 SDK 버전에서 안정성 문제로 주석 처리
 ```
 
-**Sub-Agent 2 (sub_agents/spanner_deployer/agent.yaml):**
+**Sub-Agent 2 (sub_agents/spanner_deployer/root_agent.yaml):**
 ```yaml
-name: spanner-deployer
-expose: true   # A2A 엔드포인트로도 노출 (선택사항)
-description: "Spanner 배포 및 검증 전문 Agent"
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: spanner_deployer
+description: Google Cloud Spanner Graph 배포 및 검증 전문 Agent
+
+instruction: |
+  당신은 Google Cloud Spanner Graph 배포 전문가입니다.
+  DDL을 검증하고 배포 가이드를 제공합니다.
 ```
 
 #### Sub-Agent 호출 방식
@@ -213,14 +242,14 @@ description: "Spanner 배포 및 검증 전문 Agent"
 ```python
 # 내부 호출 (빠른 로컬 호출)
 response = await call_sub_agent(
-    agent_name="schema-designer",
+    agent_name="schema_designer",
     message="LG U+ 요금제 스키마 설계해줘",
     context={"business_requirements": "..."}
 )
 
 # Sub-Agent 간 직접 통신
 ddl_result = await call_sub_agent(
-    agent_name="spanner-deployer",
+    agent_name="spanner_deployer",
     message="이 DDL을 배포해줘",
     context={"ddl": response.ddl_statements}
 )
@@ -995,16 +1024,17 @@ graph-designer-agent/
 ├── .gitignore                    # Git 제외 파일
 ├── pyproject.toml                # Python 프로젝트 설정
 ├── README.md                     # 프로젝트 문서
-├── agent.yaml                    # Main Agent 설정
-├── prompts/
-│   └── system.md                 # Main Agent 시스템 프롬프트
+├── main_agent/                   # Main Agent 디렉토리
+│   ├── root_agent.yaml           # Main Agent 설정
+│   └── prompts/
+│       └── system.md             # Main Agent 시스템 프롬프트
 ├── sub_agents/
 │   ├── schema_designer/
-│   │   ├── agent.yaml            # Schema Designer 설정
+│   │   ├── root_agent.yaml       # Schema Designer 설정
 │   │   └── prompts/
 │   │       └── system.md         # Schema Designer 시스템 프롬프트
 │   └── spanner_deployer/
-│       ├── agent.yaml            # Spanner Deployer 설정
+│       ├── root_agent.yaml       # Spanner Deployer 설정
 │       ├── prompts/
 │       │   └── system.md         # Spanner Deployer 시스템 프롬프트
 │       └── tools/
@@ -1176,88 +1206,46 @@ examples/
 
 #### 1. Main Agent 설정
 
-**agent.yaml:**
+**main_agent/root_agent.yaml:**
 
 ```yaml
-name: graph-designer-main
-expose: true
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: graph_designer_main
 description: |
   그래프 스키마 설계 및 Spanner 배포 통합 시스템.
   비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Spanner에 배포합니다.
 
-model:
-  name: gemini-3-flash-preview
-  temperature: 0.7
-  max_tokens: 8192
+instruction: |
+  당신은 Graph Designer AI의 메인 오케스트레이터입니다.
+  
+  **역할:**
+  - 사용자의 요청을 분석하여 적절한 Sub-Agent에게 작업을 위임합니다.
+  - Sub-Agent의 결과를 통합하여 사용자에게 전달합니다.
+  
+  **사용 가능한 Sub-Agents:**
+  1. **Schema Designer**: 그래프 스키마 설계 및 DDL 생성
+  2. **Spanner Deployer**: Spanner 배포 및 검증
+  
+  **워크플로우 판단:**
+  - "스키마 만들어줘", "그래프 설계" → Schema Designer 호출
+  - "배포해줘", "Spanner에 적용" → Spanner Deployer 호출
+  - "만들고 배포까지" → 순차적으로 두 Agent 호출
 
 sub_agents:
-  - path: ./sub_agents/schema_designer
-  - path: ./sub_agents/spanner_deployer
-
-tools:
-  - name: generate_image
-    description: "그래프 시각화 이미지 생성"
+  - config_path: ../sub_agents/schema_designer/root_agent.yaml
+  - config_path: ../sub_agents/spanner_deployer/root_agent.yaml
 ```
 
-**prompts/system.md:**
+> [!IMPORTANT]
+> **ADK Agent Config 방식에서는 별도의 `prompts/system.md` 파일이 필요 없습니다.**
+> 
+> - 시스템 프롬프트는 `root_agent.yaml`의 `instruction` 필드에 직접 작성합니다.
+> - `prompts/` 디렉토리는 Python 기반 Agent 구현 시에만 사용됩니다.
+> - Agent Config (YAML) 방식을 사용하는 경우 `instruction` 필드만 사용하세요.
 
-```markdown
-# Graph Designer Main Agent
-
-당신은 **Graph Designer AI**의 메인 오케스트레이터입니다.
-
-## 역할
-
-사용자의 요청을 분석하여 적절한 Sub-Agent에게 작업을 위임하고, 결과를 통합하여 사용자에게 전달합니다.
-
-## 사용 가능한 Sub-Agents
-
-### 1. Schema Designer (`schema-designer`)
-- **역할**: 그래프 스키마 설계 및 DDL 생성
-- **입력**: 비즈니스 요구사항 (자연어, 문서)
-- **출력**: Graph 스키마, DDL, 시각화
-
-### 2. Spanner Deployer (`spanner-deployer`)
-- **역할**: Spanner 배포 및 검증
-- **입력**: DDL 코드
-- **출력**: 배포 결과, 검증 리포트
-
-## 워크플로우 판단 로직
-
-### 스키마 설계 요청
-사용자 의도:
-- "스키마 만들어줘"
-- "그래프 설계해줘"
-- "요금제 모델링"
-
-→ **Action**: `schema-designer` 호출
-
-### 배포 요청
-사용자 의도:
-- "배포해줘"
-- "Spanner에 적용"
-- "DDL 실행"
-
-→ **Action**: `spanner-deployer` 호출
-
-### 통합 요청 (설계 + 배포)
-사용자 의도:
-- "만들고 배포까지"
-- "스키마 생성하고 Spanner에 올려줘"
-
-→ **Action**: 
-1. `schema-designer` 호출
-2. 결과를 `spanner-deployer`에게 전달 (A2A 통신)
-3. 통합 결과 반환
-
-## 응답 형식
-
-1. **사용자 의도 확인**: "[요청 내용]을 이해했습니다."
-2. **Sub-Agent 호출 계획**: "Schema Designer를 호출하여 스키마를 설계합니다."
-3. **결과 통합**: Sub-Agent의 응답을 사용자 친화적으로 재구성
-4. **다음 단계 제안**: "배포하시려면 '배포해줘'라고 말씀해주세요."
-
-## 컨텍스트 관리
+#### 2. Schema Designer Sub-Agent
 
 - 대화 히스토리를 유지하여 이전 설계를 참조
 - 수정 요청 시 기존 DDL을 업데이트
@@ -1266,27 +1254,25 @@ tools:
 
 #### 2. Schema Designer Sub-Agent
 
-**sub_agents/schema_designer/agent.yaml:**
+**sub_agents/schema_designer/root_agent.yaml:**
 
 ```yaml
-name: schema-designer
-expose: true
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: schema_designer
 description: |
   Google Cloud Spanner Graph 스키마 설계 전문 Agent.
   비즈니스 요구사항을 분석하여 Nodes, Edges, Properties를 정의하고
   Spanner CREATE PROPERTY GRAPH DDL을 생성합니다.
 
-model:
-  name: gemini-3-flash-preview
-  temperature: 0.7
-  max_tokens: 8192
+instruction: |
+  ... (메인 섹션의 instruction 내용과 동일) ...
 
-tools:
-  - name: generate_image
-    description: "그래프 다이어그램 생성"
+# 현재 버전의 ADK에서는 Mermaid 시각화를 위해 별도 도구 없이 텍스트 응답만으로도 충분합니다.
 ```
 
-**sub_agents/schema_designer/prompts/system.md:**
+**sub_agents/schema_designer/instruction:** (YAML 파일 내에 포함됨)
 
 ```markdown
 # Schema Designer Agent
@@ -1332,9 +1318,9 @@ graph TD
     style Node2 fill:#E8F5E9
 ```
 
-**또는 이미지 생성:**
-- `generate_image` 도구 사용
-- 프롬프트: "Professional graph database schema diagram with nodes and edges..."
+**시각화 참고:**
+- ADK 웹 UI에서 Mermaid 다이어그램 렌더링을 지원합니다.
+- 복사하여 외부 툴(Mermaid Live Editor 등)에서 활용 가능합니다.
 
 ### 4. Spanner Graph DDL
 
@@ -1533,28 +1519,24 @@ EDGE TABLES (
 
 #### 3. Spanner Deployer Sub-Agent
 
-**sub_agents/spanner_deployer/agent.yaml:**
+**sub_agents/spanner_deployer/root_agent.yaml:**
 
 ```yaml
-name: spanner-deployer
-expose: true
+# yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
+agent_class: LlmAgent
+model: gemini-3-flash-preview
+name: spanner_deployer
 description: |
   Google Cloud Spanner Graph 배포 및 검증 전문 Agent.
-  DDL을 검증하고 Spanner 인스턴스에 배포하며, 샘플 데이터 삽입 및 쿼리 테스트를 수행합니다.
+  DDL을 검증하고 배포 가이드를 제공합니다.
 
-model:
-  name: gemini-3-flash-preview
-  temperature: 0.3  # 배포는 정확성이 중요하므로 낮은 temperature
-  max_tokens: 4096
+instruction: |
+  ... (시스템 지침) ...
 
-tools:
-  - name: run_command
-    description: "gcloud 명령어 실행"
-  - name: write_to_file
-    description: "DDL 파일 생성"
+# 실제 배포는 보안을 위해 사용자가 스크립트(`scripts/setup_spanner.sh` 등)를 통해 실행하는 것을 권장합니다.
 ```
 
-**sub_agents/spanner_deployer/prompts/system.md:**
+**sub_agents/spanner_deployer/instruction:** (YAML 파일 내에 포함됨)
 
 ```markdown
 # Spanner Deployer Agent
@@ -2172,7 +2154,7 @@ https://console.cloud.google.com/spanner/instances/graph-designer-instance/datab
    ```bash
    mkdir -p graph-designer-agent/sub_agents/{schema_designer,spanner_deployer}/prompts
    ```
-2. **agent.yaml 파일 작성**
+2. **root_agent.yaml 파일 작성**
    - Main Agent 설정 (`expose: true`, `sub_agents` 경로)
    - Sub-Agent 설정 (`expose: true/false` 선택)
 3. **폴더 구조 확인**
