@@ -103,7 +103,7 @@ graph TB
    - Kùzu DB 조작이 로컬 파일 I/O 수준으로 매우 빠름
 
 3. **클라우드 비용 제로**
-   - Spanner 인스턴스 유지 비용 없이 로컬 스토리지 기반으로 PoC/테스트 완벽 대응
+   - Kuzu 인스턴스 유지 비용 없이 로컬 스토리지 기반으로 PoC/테스트 완벽 대응
 
 4. **로컬 개발 편의성**
    - `adk web` 실행 시 Main + Sub-Agents 모두 로드
@@ -652,7 +652,7 @@ graph TD
 - ✅ **설계부터 배포까지 완전 자동화** (원본 웹앱 이상의 가치)
 - ✅ **Vibe Prototyping 철학 완벽 구현** (코드 없이 자연어로 전체 프로세스 완료)
 - ✅ **개발/배포/유지보수 비용 제로**
-- ✅ **Spanner 배포 자동화** (원본에 없던 기능 추가)
+- ✅ **Kuzu 배포 자동화** (원본에 없던 기능 추가)
 
 **제약사항 대응:**
 - ⚠️ 시각적 편집 불가 → 대화형 수정으로 대체 (프로토타이핑에는 충분)
@@ -660,7 +660,7 @@ graph TD
 
 **권장 구성:**
 1. **Agent 1 (Schema Designer)**: 스키마 설계 + 대화형 수정
-2. **Agent 2 (Spanner Deployer)**: 검증 + 배포 + 샘플 데이터 + 테스트
+2. **Agent 2 (Kuzu Deployer)**: 검증 + 배포 + 샘플 데이터 + 테스트
 
 **적용 시나리오:**
 - 프로토타이핑/PoC 단계: ⭐⭐⭐⭐⭐ 완벽
@@ -711,10 +711,10 @@ source .venv/bin/activate  # Linux/macOS
 [project]
 name = "graph-designer-agent"
 version = "0.1.0"
-description = "ADK Agent for Graph Schema Design and Spanner Deployment"
+description = "ADK Agent for Graph Schema Design and Kuzu Deployment"
 requires-python = ">=3.11"
 dependencies = [
-    "google-cloud-spanner>=3.40.0",
+    "kuzu>=0.8.0",
     "google-cloud-aiplatform>=1.40.0",
     "google-generativeai>=0.3.0",
     "pydantic>=2.5.0",
@@ -727,10 +727,6 @@ dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 ```
 
 **패키지 설치 명령어:**
@@ -743,264 +739,7 @@ uv pip install -e .
 uv pip install -e ".[dev]"
 ```
 
-### 필수 GCP 설정
 
-#### 1. 환경 변수 설정 (.env 파일)
-
-**⚠️ 중요: 가장 먼저 .env 파일을 생성하고 설정하세요!**
-
-**.env.example 파일 생성:**
-
-프로젝트 루트에 `.env.example` 파일을 생성하여 템플릿으로 사용합니다:
-
-```bash
-# .env.example (템플릿 - Git에 커밋됨)
-# 실제 사용 시 .env로 복사하여 값을 수정하세요
-
-# GCP 설정 (필수: 실제 프로젝트 ID로 변경하세요!)
-GCP_PROJECT_ID=your-gcp-project-id
-GCP_REGION=us-central1
-
-# Spanner 설정 (⚠️ 중요: Enterprise 이상 에디션 필수)
-SPANNER_INSTANCE_ID=graph-designer-instance
-SPANNER_DATABASE_ID=telecom-graph-db
-
-# Gemini 설정
-GEMINI_MODEL=gemini-3-flash-preview
-```
-
-**.env 파일 생성 및 수정:**
-
-```bash
-# 1. .env.example을 복사하여 .env 생성
-cp .env.example .env
-
-# 2. .env 파일을 편집하여 실제 값으로 수정
-nano .env  # 또는 vi, code 등 원하는 에디터 사용
-```
-
-**.env 파일 내용 예시 (실제 값으로 수정):**
-
-```bash
-# GCP 설정
-GCP_PROJECT_ID=my-actual-project-123  # ← 실제 프로젝트 ID로 변경!
-GCP_REGION=us-central1
-
-# Spanner 설정
-SPANNER_INSTANCE_ID=graph-designer-instance
-SPANNER_DATABASE_ID=telecom-graph-db
-
-# Gemini 설정
-GEMINI_MODEL=gemini-3-flash-preview
-```
-
-**.gitignore 설정:**
-
-`.env` 파일이 Git에 커밋되지 않도록 `.gitignore`에 추가:
-
-```bash
-# .gitignore
-.env
-.venv/
-__pycache__/
-*.pyc
-```
-
-#### 2. GCP 프로젝트 및 인증 설정
-
-**.env 파일의 값을 사용하여 GCP 설정:**
-
-```bash
-# .env 파일 로드
-source .env  # 또는 export $(cat .env | grep -v '^#' | xargs)
-
-# GCP 프로젝트 설정
-gcloud config set project $GCP_PROJECT_ID
-
-# Application Default Credentials 설정
-gcloud auth application-default login
-
-# 필요한 API 활성화
-gcloud services enable spanner.googleapis.com
-gcloud services enable aiplatform.googleapis.com
-gcloud services enable run.googleapis.com
-```
-
-**💡 팁:** 
-- 모든 스크립트(`setup_spanner.sh` 등)는 자동으로 `.env` 파일을 읽어옵니다
-- 한 번 `.env` 파일을 설정하면 이후 모든 작업에서 재사용됩니다
-- `.env` 파일은 절대 Git에 커밋하지 마세요 (민감 정보 포함)
-
----
-
-## 🏗️ Spanner 인프라 자동화
-
-### 💰 Spanner 비용 정보
-
-**100 Processing Units (PU) 기준 시간당 비용:**
-
-이 랩에서는 **가장 저렴한 구성인 100 PU**를 사용합니다.
-
-#### 에디션별 시간당 비용 (asia-northeast3 서울 리전 기준)
-
-| 에디션 | 100 PU 시간당 비용 | 월 예상 비용 (24/7) | 특징 |
-|--------|-------------------|---------------------|------|
-| **Standard** | $0.117 | 약 $84 | **Graph 기능 미지원** |
-| **Enterprise** | **$0.160** | **약 $115** | **Graph 지원 (권장)** |
-| **Enterprise Plus** | $0.222 | 약 $160 | 최고 사양, Graph 지원 |
-
-#### 리전별 비용 차이
-
-- **asia-northeast3 (서울)**: $0.12 ~ $0.15/시간
-- **us-central1 (아이오와)**: 약 $0.09/시간 (더 저렴)
-- **europe-west1 (벨기에)**: 약 $0.10/시간
-
-**💡 비용 절감 팁:**
-- **테스트용**: Enterprise 에디션 + 100 PU 사용 (시간당 $0.160)
-- **리전 선택**: us-central1 사용 시 약 $0.09/시간으로 더 저렴하게 이용 가능
-- **사용 후 삭제**: 실습 종료 후 반드시 `cleanup_spanner.sh`를 실행하여 인스턴스를 삭제하세요.
-
-**⚠️ 주의사항:**
-- Spanner는 **시간 단위로 과금**됩니다 (분 단위 과금 아님)
-- 인스턴스를 생성하면 삭제할 때까지 계속 과금됩니다
-- 이 랩 완료 후 **반드시 인스턴스를 삭제**하세요!
-
----
-
-### 최소 비용 Spanner 인스턴스 생성 스크립트
-
-**scripts/setup_spanner.sh:**
-
-```bash
-#!/bin/bash
-
-# Spanner 인스턴스 및 데이터베이스 자동 생성 스크립트
-# 최소 비용 구성: 100 Processing Units (가장 저렴한 옵션)
-
-set -e  # 에러 발생 시 스크립트 중단
-
-# 환경 변수 로드
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
-
-# 기본값 설정
-PROJECT_ID=${GCP_PROJECT_ID:-"your-gcp-project-id"}
-REGION=${GCP_REGION:-"us-central1"}
-INSTANCE_ID=${SPANNER_INSTANCE_ID:-"graph-designer-instance"}
-DATABASE_ID=${SPANNER_DATABASE_ID:-"telecom-graph-db"}
-CONFIG="regional-${REGION}"
-EDITION="ENTERPRISE"   # Spanner Graph 필수 에디션
-PROCESSING_UNITS=100  # 최소 비용 (Enterprise 기준 약 $0.09/hour for us-central1)
-
-echo "========================================"
-echo "Spanner 인프라 설정 시작"
-echo "========================================"
-echo "프로젝트: $PROJECT_ID"
-echo "리전: $REGION"
-echo "인스턴스: $INSTANCE_ID"
-echo "데이터베이스: $DATABASE_ID"
-echo "에디션: $EDITION"
-echo "Processing Units: $PROCESSING_UNITS"
-echo "========================================"
-
-# 1. Spanner API 활성화 확인
-echo -e "\n[1/4] Spanner API 활성화 확인..."
-gcloud services enable spanner.googleapis.com --project=$PROJECT_ID
-
-# 2. Spanner 인스턴스 생성 (이미 존재하면 스킵)
-echo -e "\n[2/4] Spanner 인스턴스 생성 중..."
-EXISTING_EDITION=$(gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID --format="value(edition)" 2>/dev/null || echo "")
-
-if [ -n "$EXISTING_EDITION" ]; then
-    echo "✓ 인스턴스 '$INSTANCE_ID'가 이미 존재합니다. (에디션: $EXISTING_EDITION)"
-    if [[ "$EXISTING_EDITION" == "STANDARD" ]]; then
-        echo "⚠️  경고: 현재 인스턴스가 STANDARD 에디션입니다. Spanner Graph는 Enterprise 이상이 필요합니다."
-    fi
-else
-    gcloud spanner instances create $INSTANCE_ID \
-        --config=$CONFIG \
-        --description="Graph Designer Instance" \
-        --processing-units=$PROCESSING_UNITS \
-        --edition=$EDITION \
-        --project=$PROJECT_ID
-    echo "✓ 인스턴스 '$INSTANCE_ID' 생성 완료 ($EDITION 에디션)"
-fi
-
-# 3. Spanner 데이터베이스 생성 (이미 존재하면 스킵)
-echo "\n[3/4] Spanner 데이터베이스 생성 중..."
-if gcloud spanner databases describe $DATABASE_ID --instance=$INSTANCE_ID --project=$PROJECT_ID &>/dev/null; then
-    echo "✓ 데이터베이스 '$DATABASE_ID'가 이미 존재합니다."
-else
-    gcloud spanner databases create $DATABASE_ID \
-        --instance=$INSTANCE_ID \
-        --database-dialect=GOOGLE_STANDARD_SQL \
-        --project=$PROJECT_ID
-    echo "✓ 데이터베이스 '$DATABASE_ID' 생성 완료"
-fi
-
-# 4. 설정 확인
-echo "\n[4/4] 설정 확인..."
-gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID
-
-echo "\n========================================"
-echo "✅ Spanner 인프라 설정 완료!"
-echo "========================================"
-echo "인스턴스 ID: $INSTANCE_ID"
-echo "데이터베이스 ID: $DATABASE_ID"
-echo "예상 비용: 약 \$0.90/hour (\$648/month)"
-echo "\n⚠️  비용 절감 팁:"
-echo "  - 테스트 완료 후 인스턴스 삭제: gcloud spanner instances delete $INSTANCE_ID"
-echo "  - 또는 Processing Units를 줄이기: gcloud spanner instances update $INSTANCE_ID --processing-units=100"
-echo "========================================"
-```
-
-**스크립트 실행:**
-
-```bash
-# 실행 권한 부여
-chmod +x scripts/setup_spanner.sh
-
-# 스크립트 실행
-./scripts/setup_spanner.sh
-```
-
-### Spanner 정리 스크립트
-
-**scripts/cleanup_spanner.sh:**
-
-```bash
-#!/bin/bash
-
-# Spanner 리소스 정리 스크립트 (비용 절감)
-
-set -e
-
-# 환경 변수 로드
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
-
-PROJECT_ID=${GCP_PROJECT_ID:-"your-gcp-project-id"}
-INSTANCE_ID=${SPANNER_INSTANCE_ID:-"graph-designer-instance"}
-
-echo "⚠️  경고: Spanner 인스턴스를 삭제하려고 합니다."
-echo "인스턴스: $INSTANCE_ID"
-echo "프로젝트: $PROJECT_ID"
-read -p "계속하시겠습니까? (yes/no): " confirm
-
-if [ "$confirm" = "yes" ]; then
-    echo "\nSpanner 인스턴스 삭제 중..."
-    gcloud spanner instances delete $INSTANCE_ID --project=$PROJECT_ID --quiet
-    echo "✅ 인스턴스 '$INSTANCE_ID' 삭제 완료"
-else
-    echo "취소되었습니다."
-fi
-```
-
----
-
-## 📁 완전한 프로젝트 구조 및 파일 명세
 
 ### 전체 디렉토리 구조
 
@@ -1019,15 +758,12 @@ graph-designer-agent/
 │   │   ├── root_agent.yaml       # Schema Designer 설정
 │   │   └── prompts/
 │   │       └── system.md         # Schema Designer 시스템 프롬프트
-│   └── spanner_deployer/
-│       ├── root_agent.yaml       # Spanner Deployer 설정
+│   └── kuzu_deployer/
+│       ├── root_agent.yaml       # Kuzu Deployer 설정
 │       ├── prompts/
-│       │   └── system.md         # Spanner Deployer 시스템 프롬프트
+│       │   └── system.md         # Kuzu Deployer 시스템 프롬프트
 │       └── tools/
-│           └── spanner_client.py # Spanner Python SDK 래퍼
-├── scripts/
-│   ├── setup_spanner.sh          # Spanner 인프라 생성
-│   └── cleanup_spanner.sh        # Spanner 리소스 정리
+│           └── kuzu_client.py # Kuzu Python SDK 래퍼
 ├── examples/
 │   ├── lgu_telecom_plan.md       # 통신사 요금제 예시
 │   └── sample_ddl.sql            # 샘플 DDL
@@ -1203,8 +939,8 @@ agent_class: LlmAgent
 model: gemini-3-flash-preview
 name: graph_designer_main
 description: |
-  그래프 스키마 설계 및 Spanner 배포 통합 시스템.
-  비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Spanner에 배포합니다.
+  그래프 스키마 설계 및 Kuzu 배포 통합 시스템.
+  비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Kuzu에 배포합니다.
 
 instruction: |
   당신은 Graph Designer AI의 메인 오케스트레이터입니다.
@@ -1215,16 +951,16 @@ instruction: |
   
   **사용 가능한 Sub-Agents:**
   1. **Schema Designer**: 그래프 스키마 설계 및 DDL 생성
-  2. **Spanner Deployer**: Spanner 배포 및 검증
+  2. **Kuzu Deployer**: Kuzu 배포 및 검증
   
   **워크플로우 판단:**
   - "스키마 만들어줘", "그래프 설계" → Schema Designer 호출
-  - "배포해줘", "Spanner에 적용" → Spanner Deployer 호출
+  - "배포해줘", "Kuzu에 적용" → Kuzu Deployer 호출
   - "만들고 배포까지" → 순차적으로 두 Agent 호출
 
 sub_agents:
   - config_path: ../sub_agents/schema_designer/root_agent.yaml
-  - config_path: ../sub_agents/spanner_deployer/root_agent.yaml
+  - config_path: ../sub_agents/kuzu_deployer/root_agent.yaml
 ```
 
 > [!IMPORTANT]
@@ -1580,15 +1316,15 @@ cp .env.example .env
 gcloud auth application-default login
 ```
 
-#### 2단계: Spanner 인프라 생성
+#### 2단계: Kuzu 인프라 생성
 
 ```bash
-# Spanner 인스턴스 및 데이터베이스 생성
-./scripts/setup_spanner.sh
+# Kuzu 인스턴스 및 데이터베이스 생성
+./scripts/setup_kuzu.sh
 
 # 출력 예시:
 # ========================================
-# ✅ Spanner 인프라 설정 완료!
+# ✅ Kuzu 인프라 설정 완료!
 # ========================================
 # 인스턴스 ID: graph-designer-instance
 # 데이터베이스 ID: telecom-graph-db
@@ -1671,10 +1407,10 @@ graph TD
 
 ---
 
-💡 **다음 단계**: 이 DDL을 Spanner에 배포하려면 "배포해줘"라고 말씀해주세요.
+💡 **다음 단계**: 이 DDL을 Kuzu에 배포하려면 "배포해줘"라고 말씀해주세요.
 ```
 
-#### 5단계: Spanner 배포
+#### 5단계: Kuzu 배포
 
 **사용자 입력:**
 ```
@@ -1683,7 +1419,7 @@ graph TD
 
 **Agent 응답:**
 ```markdown
-## 🚀 Spanner 배포 계획
+## 🚀 Kuzu 배포 계획
 
 ### 실행될 DDL 요약
 - 생성될 테이블: Plan, PlanCategory, Benefit, Condition, PlanBelongsTo, PlanIncludesBenefit, PlanRequiresCondition
@@ -1706,7 +1442,7 @@ yes
 
 **Agent 실행 및 응답:**
 ```markdown
-## ✅ Spanner 배포 완료 리포트
+## ✅ Kuzu 배포 완료 리포트
 
 ### 배포 정보
 - **프로젝트**: my-gcp-project
@@ -1736,15 +1472,15 @@ RETURN p.name, c.category_name;
 | 5G 프리미어 에센셜 | 5G 프리미어 |
 | 5G 프리미어 | 5G 프리미어 |
 
-### Spanner 콘솔 링크
-https://console.cloud.google.com/spanner/instances/graph-designer-instance/databases/telecom-graph-db?project=my-gcp-project
+### Kuzu 콘솔 링크
+https://console.cloud.google.com/kuzu/instances/graph-designer-instance/databases/telecom-graph-db?project=my-gcp-project
 ```
 
 #### 6단계: 정리 (선택)
 
 ```bash
-# 비용 절감을 위해 Spanner 인스턴스 삭제
-./scripts/cleanup_spanner.sh
+# 비용 절감을 위해 Kuzu 인스턴스 삭제
+./scripts/cleanup_kuzu.sh
 ```
 
 ---
@@ -1754,7 +1490,7 @@ https://console.cloud.google.com/spanner/instances/graph-designer-instance/datab
 ### 1단계: 프로젝트 구조 생성
 1. **디렉토리 생성**
    ```bash
-   mkdir -p graph-designer-agent/sub_agents/{schema_designer,spanner_deployer}/prompts
+   mkdir -p graph-designer-agent/sub_agents/{schema_designer,kuzu_deployer}/prompts
    ```
 2. **root_agent.yaml 파일 작성**
    - Main Agent 설정 (`expose: true`, `sub_agents` 경로)
@@ -1779,10 +1515,10 @@ https://console.cloud.google.com/spanner/instances/graph-designer-instance/datab
 2. **그래프 시각화 전략 확정** (Mermaid vs 이미지 생성)
 3. **로컬 테스트**
 
-### 4단계: Sub-Agent 2 (Spanner Deployer) 구현
-1. **System Prompt 작성** (sub_agents/spanner_deployer/prompts/system.md)
+### 4단계: Sub-Agent 2 (Kuzu Deployer) 구현
+1. **System Prompt 작성** (sub_agents/kuzu_deployer/prompts/system.md)
    - DDL 검증 로직
-   - Spanner 배포 전략
+   - Kuzu 배포 전략
    - 안전 장치 (승인 프로세스)
 2. **gcloud CLI 연동 구현**
 3. **로컬 테스트**
