@@ -55,12 +55,13 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 ### 2️⃣ 구현 시작
 
 ```bash
-# 1. 저장소 클론 및 브랜치 생성
+# 1. 저장소 클론 및 Worktree 구성
 git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
 cd 202602g_GDG_Build_with_AI
 
-# ⚠️ 권장: 개발 전용 브랜치(impl)를 만들어 작업을 시작하세요
-git checkout -b impl
+# ⚠️ 권장: git worktree를 사용하여 개발 전용 독립 환경(impl)을 구성하세요
+git worktree add -b impl ../impl origin/local-kuzu
+cd ../impl
 
 # 2. 구현 계획서 열기
 # 계획서의 "환경 설정 및 의존성" 섹션부터 순서대로 따라하기
