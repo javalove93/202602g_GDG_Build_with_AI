@@ -55,17 +55,16 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 ### 2️⃣ 구현 시작
 
 ```bash
-# 1. 저장소 클론 및 브랜치 체크아웃
+# 1. 저장소 클론 및 브랜치 생성
 git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
 cd 202602g_GDG_Build_with_AI
-git checkout local-kuzu
 
-# 2. 패키지 설치
-cd impl1/graph-designer-agent
-uv pip install -e .
+# ⚠️ 권장: 개발 전용 브랜치(impl)를 만들어 작업을 시작하세요
+git checkout -b impl
 
-# 3. Agent 실행
-adk web main_agent/root_agent.yaml
+# 2. 구현 계획서 열기
+# 계획서의 "환경 설정 및 의존성" 섹션부터 순서대로 따라하기
+cat docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
 ```
 
 ---
@@ -162,10 +161,8 @@ adk web main_agent/root_agent.yaml
 ## 🎓 다음 단계
 
 1. ✅ **지금**: `docs/Graph_Designer_ADK_Agent_Implementation_Plan.md` 읽기 시작
-2. ✅ **환경 설정**: uv 설치 및 .env 파일 생성
-3. ✅ **Spanner 생성**: setup_spanner.sh 실행
-4. ✅ **Agent 구현**: 계획서 따라 파일 생성
-5. ✅ **테스트**: examples/입력_예시.md로 검증
-6. ✅ **배포**: Cloud Run에 배포 (선택)
+2. ✅ **환경 설정**: uv 설치 및 가상환경 초기화
+3. ✅ **Agent 구현**: 계획서에 따라 `graph-designer-agent` 폴더 구조 및 파일 생성
+4. ✅ **테스트**: `examples/입력_예시.md`를 활용하여 Kùzu DB에 스키마 자동 생성 검증
 
 **시작하세요! 모든 것이 준비되어 있습니다.** 🚀
