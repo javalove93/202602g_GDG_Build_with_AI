@@ -6,7 +6,7 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 
 ## 📋 프로젝트 개요
 
-이 프로젝트는 **LG U+ 요금제**와 같은 복잡한 비즈니스 규칙을 입력받아, **Kùzu Embedded Graph 스키마**를 자동으로 설계하고 배포하는 ADK Agent 시스템입니다. 클라우드 인프라(Spanner) 대신 로컬 임베디드 그래프 DB(Kùzu)를 사용하여 비용 없이 빠르게 프로토타이핑할 수 있습니다.
+이 프로젝트는 **통신사 요금제**와 같은 복잡한 비즈니스 규칙을 입력받아, **Kùzu Embedded Graph 스키마**를 자동으로 설계하고 배포하는 ADK Agent 시스템입니다. 클라우드 인프라(Spanner) 대신 로컬 임베디드 그래프 DB(Kùzu)를 사용하여 비용 없이 빠르게 프로토타이핑할 수 있습니다.
 
 ### 핵심 기능
 - ✅ 자연어 비즈니스 요구사항 → Graph 스키마 자동 생성
@@ -27,7 +27,7 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 │   ├── Build_with_AI_Vibe_prototyping.md       # 참고: Vibe Prototyping 개념
 │   └── Build with AI - Vibe prototyping using GraphDB.pdf  # 원본 발표 자료
 └── examples/
-    └── 입력_예시.md                              # ⭐ Agent 테스트용 LG U+ 요금제 예시
+    └── 입력_예시.md                              # ⭐ Agent 테스트용 통신사 요금제 예시
 ```
 
 ---
@@ -49,7 +49,7 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 
 2. **[examples/입력_예시.md](examples/입력_예시.md)** ⭐
    - **Agent 테스트용 입력 데이터**
-   - LG U+ 5G 요금제 실제 정보 포함
+   - 통신사 5G 요금제 실제 정보 포함
    - 4가지 입력 방법 예시
 
 ### 2️⃣ 구현 시작
@@ -100,7 +100,7 @@ adk web main_agent/root_agent.yaml
 - [x] **Agent 설정 파일**: root_agent.yaml (Main + Sub-Agents)
 - [x] **시스템 프롬프트**: 전체 Kùzu Cypher 프롬프트 내용 포함
 - [x] **Python 코드**: Kùzu 로컬 DB 래퍼 클래스
-- [x] **테스트 데이터**: LG U+ 요금제 실제 예시
+- [x] **테스트 데이터**: 통신사 요금제 실제 예시
 
 ### 외부 의존성
 
@@ -119,7 +119,7 @@ adk web main_agent/root_agent.yaml
 - 클라우드 DB(Spanner) 대신 로컬 Embedded DB(Kùzu)를 사용하여, 인프라 비용 없이 무제한 프로토타이핑 가능.
 
 ### 2. 실제 비즈니스 케이스
-- LG U+ 5G 요금제 실제 데이터
+- 통신사 5G 요금제 실제 데이터
 - 4가지 입력 방법 예시
 - 예상 출력 포함
 
@@ -149,7 +149,7 @@ adk web main_agent/root_agent.yaml
 
 ### 참고 자료
 - 발표 자료: `docs/Build with AI - Vibe prototyping using GraphDB.pdf`
-- LG U+ 공식 홈페이지: https://www.lguplus.com/mobile/plan/mplan/plan-all
+- 통신사 공식 홈페이지: https://www.lguplus.com/mobile/plan/mplan/plan-all
 
 ---
 

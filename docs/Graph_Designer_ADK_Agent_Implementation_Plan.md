@@ -258,7 +258,7 @@ tools:
 # 내부 호출 (빠른 로컬 호출)
 response = await call_sub_agent(
     agent_name="schema_designer",
-    message="LG U+ 요금제 스키마 설계해줘",
+    message="통신사 요금제 스키마 설계해줘",
     context={"business_requirements": "..."}
 )
 
@@ -527,7 +527,7 @@ graph TD
 #### 시나리오 1: 단계별 작업
 
 ```
-사용자: "LG U+ 요금제 스키마 만들어줘"
+사용자: "통신사 요금제 스키마 만들어줘"
   ↓
 [Main Agent]
   → 의도 파악: 스키마 설계 요청
@@ -581,7 +581,7 @@ graph TD
 #### 시나리오 2: End-to-End 자동화
 
 ```
-사용자: "LG U+ 요금제 스키마 만들고 바로 로컬 DB에 배포해줘"
+사용자: "통신사 요금제 스키마 만들고 바로 로컬 DB에 배포해줘"
   ↓
 [Main Agent]
   → 의도 파악: 설계 + 배포 통합 요청
@@ -1029,7 +1029,7 @@ graph-designer-agent/
 │   ├── setup_spanner.sh          # Spanner 인프라 생성
 │   └── cleanup_spanner.sh        # Spanner 리소스 정리
 ├── examples/
-│   ├── lgu_telecom_plan.md       # LG U+ 요금제 예시
+│   ├── lgu_telecom_plan.md       # 통신사 요금제 예시
 │   └── sample_ddl.sql            # 샘플 DDL
 └── tests/
     └── test_integration.py       # 통합 테스트
@@ -1048,7 +1048,7 @@ Schema Designer Agent는 다음 3가지 형식의 입력을 처리할 수 있어
 자연어로 작성된 비즈니스 규칙 및 요구사항:
 
 ```
-LG U+ 5G 요금제 상담 챗봇을 위한 그래프 DB 설계:
+통신사 5G 요금제 상담 챗봇을 위한 그래프 DB 설계:
 - 요금제(Plan): 이름, 가격, 데이터 제공량, 음성 제공량
 - 요금제 카테고리(PlanCategory): 5G 단말기, 5G 프리미어 등
 - 혜택(Benefit): OTT 서비스, 데이터 추가 등
@@ -1064,10 +1064,10 @@ LG U+ 5G 요금제 상담 챗봇을 위한 그래프 DB 설계:
 
 PDF, Excel, 또는 텍스트 파일로 제공되는 실제 비즈니스 데이터:
 
-**예시: LG U+ 요금제 정보 (2024년 5월 22일 기준)**
+**예시: 통신사 요금제 정보 (2024년 5월 22일 기준)**
 
 ```
-[내부용] LG 유플러스 5G 요금제
+[내부용] 통신사 5G 요금제
 
 대상: 5G 단말기 이용 고객
 
@@ -1123,7 +1123,7 @@ Agent가 이해해야 할 자연어 요구사항 패턴:
 
 ```
 # 패턴 1: 엔티티 정의
-"LG U+ 5G 요금제 중 만 34세 이하 할인 혜택 구조를 설계해줘."
+"통신사 5G 요금제 중 만 34세 이하 할인 혜택 구조를 설계해줘."
 → 엔티티: Plan, AgeDiscount
 → 관계: Plan -[OFFERS]-> AgeDiscount
 
@@ -1163,14 +1163,14 @@ Agent: "어떤 요금제에 대한 스키마를 만들까요? 다음 정보를 �
 
 ```
 examples/
-├── lgu_telecom_plan.md          # LG U+ 요금제 상세 정보 (위 예시)
+├── lgu_telecom_plan.md          # 통신사 요금제 상세 정보 (위 예시)
 ├── business_requirements.txt    # 자연어 비즈니스 요구사항 예시
 └── sample_input.json           # 구조화된 입력 데이터 예시
 ```
 
 **examples/lgu_telecom_plan.md:**
 ```markdown
-# LG U+ 5G 요금제 정보
+# 통신사 5G 요금제 정보
 
 ## 요금제 라인업
 
@@ -1336,11 +1336,11 @@ CREATE REL TABLE EdgeTable1 (FROM NodeTable1 TO NodeTable2, edge_property STRING
 3. **관계 정의**: CREATE REL TABLE 구문 사용 시 출발지(FROM)와 목적지(TO) 명시
 4. **데이터 타입**: Kùzu 지원 타입 사용 (STRING, INT64, DOUBLE, BOOLEAN, DATE 등)
 
-## 예시: LG U+ 통신사 요금제
+## 예시: 통신사 통신사 요금제
 
 ### 비즈니스 요구사항
 ```
-LG U+ 요금제 상담 챗봇을 위한 그래프 DB 설계:
+통신사 요금제 상담 챗봇을 위한 그래프 DB 설계:
 - 요금제(Plan)와 카테고리(PlanCategory) 관계
 - 요금제별 혜택(Benefit) 포함 관계
 - 가입 조건(Condition) 요구사항
@@ -1558,7 +1558,7 @@ ERROR: Catalog exception: Table Plan already exists.
 
 ## 🧪 End-to-End 실행 가이드
 
-### 전체 워크플로우 예시: LG U+ 요금제 스키마
+### 전체 워크플로우 예시: 통신사 요금제 스키마
 
 #### 1단계: 환경 설정
 
@@ -1608,7 +1608,7 @@ adk web
 
 **사용자 입력:**
 ```
-LG U+ 통신사 요금제 상담 챗봇을 위한 그래프 DB 스키마를 설계해줘.
+통신사 통신사 요금제 상담 챗봇을 위한 그래프 DB 스키마를 설계해줘.
 
 요구사항:
 - 요금제(Plan): 이름, 가격, 데이터 제공량, 음성 제공량
@@ -1794,7 +1794,7 @@ https://console.cloud.google.com/spanner/instances/graph-designer-instance/datab
    ```
 2. **End-to-End 시나리오 검증**
    - 스키마 설계 → 수정 → 배포 전체 플로우
-3. **LG U+ 요금제 예시로 실전 테스트**
+3. **통신사 요금제 예시로 실전 테스트**
 
 ### 6단계: Cloud Run 배포
 1. **프로덕션 배포**
