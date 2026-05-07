@@ -62,7 +62,7 @@ git checkout local-kuzu
 
 # 2. Worktree 구성
 # ⚠️ 권장: git worktree를 사용하여 개발 전용 독립 환경(impl)을 구성하세요
-git worktree add -b impl ../impl origin/local-kuzu
+git worktree add -b impl ../impl local-kuzu
 cd ../impl
 
 # 3. 환경 설정 및 동기화 (uv 사용)
