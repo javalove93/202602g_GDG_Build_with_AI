@@ -52,7 +52,7 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
    - 통신사 5G 요금제 실제 정보 포함
    - 4가지 입력 방법 예시
 
-### 2️⃣ 구현 시작
+### 2️⃣ 구현 및 실행 가이드
 
 ```bash
 # 1. 저장소 클론 및 브랜치 전환
@@ -65,9 +65,21 @@ git checkout local-kuzu
 git worktree add -b impl ../impl origin/local-kuzu
 cd ../impl
 
-# 3. 구현 계획서 열기
-# 계획서의 "환경 설정 및 의존성" 섹션부터 순서대로 따라하기
-cat docs/Graph_Designer_ADK_Agent_Implementation_Plan.md
+# 3. 환경 설정 및 동기화 (uv 사용)
+# 의존성 설치 및 가상환경(.venv)이 자동으로 구성됩니다.
+uv sync
+
+# 4. 환경 변수 설정
+# .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY 등을 설정하세요.
+cp .env.example .env
+
+# 5. ADK Agent 실행
+# 에이전트 웹 UI가 시작됩니다. 브라우저에서 http://localhost:8080 으로 접속하세요.
+uv run adk web graph-designer-agent/main_agent/root_agent.yaml
+
+# 6. Kùzu 로컬 DB 확인 (작업 후)
+# 에이전트가 배포를 완료하면 graph-designer-agent/kuzu_db 폴더가 생성됩니다.
+ls -la graph-designer-agent/kuzu_db
 ```
 
 ---
