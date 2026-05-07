@@ -75,6 +75,9 @@ graph TB
         MainAgent -->|내부 호출| SubAgent2[Sub-Agent 2: Kuzu Deployer]
         SubAgent2 -->|내부 응답| MainAgent
         
+        MainAgent -->|내부 호출| SubAgent3[Sub-Agent 3: Visualizer]
+        SubAgent3 -->|내부 응답| MainAgent
+        
         SubAgent1 -.->|내부 통신| SubAgent2
     end
     
@@ -86,6 +89,7 @@ graph TB
     style MainAgent fill:#FFF3E0
     style SubAgent1 fill:#E3F2FD
     style SubAgent2 fill:#E8F5E9
+    style SubAgent3 fill:#FFF9C4
     style SingleDeployment fill:#F5F5F5,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5
     style OtherAgent fill:#F3E5F5,stroke-dasharray: 5 5
 ```
@@ -146,8 +150,9 @@ graph-designer-agent/
 | Agent | 역할 | 핵심 기능 |
 |-------|------|----------|
 | **Main Agent** | 오케스트레이터 | - 사용자 의도 파악<br>- Sub-Agent 호출 결정<br>- 워크플로우 조율<br>- 최종 응답 통합 |
-| **Sub-Agent 1: Schema Designer** | 스키마 설계 전문가 | - 비즈니스 요구사항 분석<br>- 그래프 모델링<br>- Cypher DDL 생성<br>- 시각화 |
+| **Sub-Agent 1: Schema Designer** | 스키마 설계 전문가 | - 비즈니스 요구사항 분석<br>- 그래프 모델링<br>- Cypher DDL 생성 |
 | **Sub-Agent 2: Kuzu Deployer** | 배포 및 운영 전문가 | - DDL 검증<br>- 로컬 Kùzu 연결<br>- 스키마 배포<br>- 샘플 데이터 삽입<br>- 쿼리 테스트 |
+| **Sub-Agent 3: Visualizer** | 시각화 전문가 | - Kùzu DB 카탈로그 조회<br>- 실제 DB 메타데이터 기반 Mermaid 생성 |
 
 ### 핵심 기능 매핑
 
@@ -211,6 +216,7 @@ instruction: |
 sub_agents:
   - config_path: ../sub_agents/schema_designer/root_agent.yaml
   - config_path: ../sub_agents/kuzu_deployer/root_agent.yaml
+  - config_path: ../sub_agents/visualizer/root_agent.yaml
 ```
 
 **Sub-Agent 1 (sub_agents/schema_designer/root_agent.yaml):**
@@ -300,9 +306,8 @@ response = await call_agent(
 2. **그래프 스키마 설계**:
    - Nodes: [노드명, 속성 목록]
    - Edges: [관계명, 출발노드, 도착노드, 속성]
-3. **시각화**: 그래프 다이어그램 이미지
-4. **DDL 코드**: Kùzu Cypher DDL (복사 가능한 코드 블록)
-5. **설계 의도**: AI의 설계 근거 설명
+3. **DDL 코드**: Kùzu Cypher DDL (복사 가능한 코드 블록)
+4. **설계 의도**: AI의 설계 근거 설명
 
 **제약사항:**
 - Kùzu Cypher 확장을 정확히 준수 (CREATE NODE TABLE, CREATE REL TABLE)
@@ -323,14 +328,11 @@ response = await call_agent(
   - Edges 정의
   - Properties 정의
   ↓
-[3단계] 시각화 생성
-  - Mermaid 다이어그램 작성
-  ↓
-[4단계] DDL 코드 생성
+[3단계] DDL 코드 생성
   - Kùzu Cypher DDL 문법
   - 실행 가능한 여러 문장을 세미콜론(;)으로 구분
   ↓
-[5단계] 설명 및 응답
+[4단계] 설명 및 응답
   - 설계 의도 설명
 ```
 
@@ -344,7 +346,6 @@ response = await call_agent(
 
 **응답 방식:**
 - 수정된 부분 하이라이트
-- 새로운 Mermaid 다이어그램 재생성
 - 변경된 DDL 코드 전체 제공
 ```
 
@@ -353,7 +354,6 @@ response = await call_agent(
 ```markdown
 **최종 출력:**
 - 완성된 DDL 코드 (마크다운 코드 블록)
-- 그래프 시각화 (Mermaid)
 - 설계 문서
 - "배포하려면 Kuzu Deployer Agent에게 이 DDL을 전달하세요" 안내
 ```
@@ -446,6 +446,39 @@ CREATE (p)-[:BELONGS_TO]->(c);
 
 ---
 
+
+---
+
+### Sub-Agent 3: Visualizer
+
+#### System Prompt 설계
+
+```markdown
+당신은 그래프 데이터베이스 시각화 전문가입니다.
+
+**역할:**
+- 로컬 Kùzu DB(`kuzu_db`)에서 현재 배포된 스키마 정보(Node, Rel)를 조회합니다.
+- 조회된 실제 메타데이터를 바탕으로 Mermaid.js 그래프 다이어그램 코드를 생성합니다.
+
+**작업 프로세스:**
+1. Kùzu DB 카탈로그 조회 쿼리 실행 (`CALL show_tables()` 등)
+2. 테이블 및 속성 목록 파악
+3. `mermaid` 코드 블록 생성
+```
+
+#### 시각화 워크플로우
+
+```
+[1단계] DB 조회
+  - Kùzu DB 접속 및 메타데이터 쿼리 실행
+  ↓
+[2단계] 정보 파싱
+  - 노드(Node) 및 엣지(Rel) 관계 맵핑
+  ↓
+[3단계] Mermaid 렌더링
+  - Mermaid 포맷으로 텍스트 다이어그램 생성
+```
+
 ## 🎨 그래프 시각화 전략
 
 ### 이미지 생성 프롬프트 예시
@@ -536,7 +569,6 @@ graph TD
 [Sub-Agent 1: Schema Designer]
   → 스키마 설계
   → DDL 생성 (Kuzu Cypher)
-  → 시각화 제공
   → Main Agent에게 반환
   ↓
 [Main Agent]
@@ -549,7 +581,7 @@ graph TD
   ↓
 [Sub-Agent 1: Schema Designer]
   → DDL 수정
-  → 새 시각화 제공
+  → Main Agent에게 반환
   ↓
 사용자: "이제 로컬에 배포해줘"
   ↓
@@ -576,6 +608,17 @@ graph TD
   → 샘플 데이터 삽입
   → 검증 쿼리 실행
   → 배포 리포트 생성
+  ↓
+사용자: "현재 구조 시각화해줘"
+  ↓
+[Main Agent]
+  → 의도 파악: 시각화 요청
+  → Sub-Agent 3 호출
+  ↓
+[Sub-Agent 3: Visualizer]
+  → Kuzu DB 접속 및 스키마 조회
+  → Mermaid 다이어그램 생성
+  → Main Agent에게 반환
 ```
 
 #### 시나리오 2: End-to-End 자동화
@@ -758,6 +801,10 @@ graph-designer-agent/
 │       │   └── system.md         # Kuzu Deployer 시스템 프롬프트
 │       └── tools/
 │           └── kuzu_client.py # Kuzu Python SDK 래퍼
+│   └── visualizer/
+│       ├── root_agent.yaml       # Visualizer 설정
+│       └── prompts/
+│           └── system.md         # Visualizer 시스템 프롬프트
 ├── examples/
 │   ├── lgu_telecom_plan.md       # 통신사 요금제 예시
 │   └── sample_ddl.sql            # 샘플 DDL
@@ -946,15 +993,18 @@ instruction: |
   **사용 가능한 Sub-Agents:**
   1. **Schema Designer**: 그래프 스키마 설계 및 DDL 생성
   2. **Kuzu Deployer**: Kuzu 배포 및 검증
+  3. **Visualizer**: DB 기반 스키마 시각화
   
   **워크플로우 판단:**
   - "스키마 만들어줘", "그래프 설계" → Schema Designer 호출
   - "배포해줘", "Kuzu에 적용" → Kuzu Deployer 호출
+  - "시각화해줘", "다이어그램 그려줘" → Visualizer 호출
   - "만들고 배포까지" → 순차적으로 두 Agent 호출
 
 sub_agents:
   - config_path: ../sub_agents/schema_designer/root_agent.yaml
   - config_path: ../sub_agents/kuzu_deployer/root_agent.yaml
+  - config_path: ../sub_agents/visualizer/root_agent.yaml
 ```
 
 > [!IMPORTANT]
@@ -1024,23 +1074,7 @@ instruction: |
 - RELATIONSHIP_NAME: NodeA → NodeB (edge_property1, ...)
 ```
 
-### 3. 시각화
-
-**Mermaid 다이어그램:**
-```mermaid
-graph TD
-    Node1[NodeName1<br/>properties]
-    Node2[NodeName2<br/>properties]
-    Node1 -->|RELATIONSHIP| Node2
-    
-    style Node1 fill:#E3F2FD
-    style Node2 fill:#E8F5E9
-```
-
-**시각화 참고:**
-- ADK 웹 UI에서 Mermaid 다이어그램 렌더링을 지원합니다.
-
-### 4. Kùzu Graph DDL
+### 3. Kùzu Graph DDL
 
 ```cypher
 -- Node 테이블 생성
@@ -1051,7 +1085,7 @@ CREATE NODE TABLE NodeTable2 (id STRING, PRIMARY KEY (id));
 CREATE REL TABLE EdgeTable1 (FROM NodeTable1 TO NodeTable2, edge_property STRING);
 ```
 
-### 5. 설계 의도 설명
+### 4. 설계 의도 설명
 
 **AI의 설계 근거:**
 - 왜 이런 구조로 설계했는지 설명
@@ -1364,25 +1398,6 @@ uv run adk web
 - Plan → INCLUDES → Benefit
 - Plan → REQUIRES → Condition
 
-### 시각화
-
-```mermaid
-graph TD
-    Plan[Plan<br/>id, name, price, data_limit, voice_limit]
-    PlanCategory[PlanCategory<br/>id, category_name, description]
-    Benefit[Benefit<br/>id, benefit_type, description, value]
-    Condition[Condition<br/>id, condition_type, value, description]
-    
-    Plan -->|BELONGS_TO| PlanCategory
-    Plan -->|INCLUDES| Benefit
-    Plan -->|REQUIRES| Condition
-    
-    style Plan fill:#E3F2FD
-    style PlanCategory fill:#E8F5E9
-    style Benefit fill:#FFF3E0
-    style Condition fill:#FFEBEE
-```
-
 ### DDL 코드
 
 [완전한 DDL - 위 Schema Designer 프롬프트 예시 참조]
@@ -1465,7 +1480,39 @@ RETURN p.name, c.category_name;
 https://console.cloud.google.com/kuzu/instances/graph-designer-instance/databases/telecom-graph-db?project=my-gcp-project
 ```
 
-#### 6단계: 정리 (선택)
+
+#### 6단계: 실제 DB 기반 시각화
+
+**사용자 입력:**
+```
+현재 배포된 DB 구조를 시각화해줘
+```
+
+**Agent 응답:**
+```markdown
+## 🎨 Kùzu DB 스키마 시각화
+
+DB 메타데이터 조회를 완료했습니다. 현재 구조는 다음과 같습니다:
+
+```mermaid
+graph TD
+    Plan[Plan]
+    PlanCategory[PlanCategory]
+    Benefit[Benefit]
+    Condition[Condition]
+    
+    Plan -->|BELONGS_TO| PlanCategory
+    Plan -->|INCLUDES| Benefit
+    Plan -->|REQUIRES| Condition
+    
+    style Plan fill:#E3F2FD
+    style PlanCategory fill:#E8F5E9
+    style Benefit fill:#FFF3E0
+    style Condition fill:#FFEBEE
+```
+```
+
+#### 7단계: 정리 (선택)
 
 ```bash
 # 비용 절감을 위해 Kuzu 인스턴스 삭제
