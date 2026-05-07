@@ -715,8 +715,8 @@ description = "ADK Agent for Graph Schema Design and Kuzu Deployment"
 requires-python = ">=3.11"
 dependencies = [
     "kuzu>=0.8.0",
-    "google-cloud-aiplatform>=1.40.0",
-    "google-generativeai>=0.3.0",
+    "google-adk",
+    "google-genai>=0.2.0",
     "pydantic>=2.5.0",
     "pyyaml>=6.0",
 ]
