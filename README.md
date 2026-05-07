@@ -178,6 +178,6 @@ ls -la graph-designer-agent/kuzu_db
 1. ✅ **지금**: `docs/Graph_Designer_ADK_Agent_Implementation_Plan.md` 읽기 시작
 2. ✅ **환경 설정**: uv 설치 및 가상환경 초기화
 3. ✅ **Agent 구현**: 계획서에 따라 `graph-designer-agent` 폴더 구조 및 파일 생성
-4. ✅ **테스트**: `examples/입력_예시.md`를 활용하여 Kùzu DB에 스키마 자동 생성 검증
+4. ✅ **테스트**: ADK 웹 UI 하단의 **클립 아이콘(첨부)**을 클릭하여 `examples/입력_예시.md` 파일을 업로드한 후, 프롬프트를 입력하여 스키마 자동 생성 검증
 
 **시작하세요! 모든 것이 준비되어 있습니다.** 🚀
