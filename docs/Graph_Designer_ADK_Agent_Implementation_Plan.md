@@ -1,13 +1,13 @@
-# Google ADK Agent 구현 계획서: Graph Designer AI
+# Google ADK Agent 구현 계획서: Graph Designer AI (Kùzu Local Version)
 
 ## Last modified: 2025-02-05 10:25
 
 ## 📋 프로젝트 개요
 
 **원본 프로그램**: AI Graph Designer (Vibe Prototyping 기반)
-- **목적**: 비즈니스 요구사항을 입력받아 GCP Spanner Graph 스키마를 자동 생성하고 시각화
+- **목적**: 비즈니스 요구사항을 입력받아 Kùzu Embedded Graph 스키마를 자동 생성하고 시각화
 - **원본 기술 스택**: React + FastAPI + Gemini 3 Flash + React Flow
-- **제안 방식**: Google ADK Agent로 재구성
+- **제안 방식**: Google ADK Agent + 로컬 Kùzu DB로 재구성 (클라우드 종속성 제거)
 
 ---
 
@@ -72,7 +72,7 @@ graph TB
         MainAgent -->|내부 호출| SubAgent1[Sub-Agent 1: Schema Designer]
         SubAgent1 -->|내부 응답| MainAgent
         
-        MainAgent -->|내부 호출| SubAgent2[Sub-Agent 2: Spanner Deployer]
+        MainAgent -->|내부 호출| SubAgent2[Sub-Agent 2: Kuzu Deployer]
         SubAgent2 -->|내부 응답| MainAgent
         
         SubAgent1 -.->|내부 통신| SubAgent2
@@ -94,42 +94,33 @@ graph TB
 
 #### ✅ 핵심 장점
 
-1. **단일 배포 단위**
-   - Main Agent + Sub-Agents를 하나의 패키지로 배포
-   - 배포 및 관리 복잡도 최소화
-   - 버전 관리 단순화
+1. **로컬 실행 및 단일 배포**
+   - 로컬 환경에서 Kùzu Embedded DB와 함께 즉시 실행 가능
+   - 배포 시 단일 컨테이너로 패키징하여 관리 복잡도 최소화
 
 2. **내부 호출 성능**
    - Main → Sub-Agent 호출 시 네트워크 오버헤드 없음
-   - 로컬 함수 호출 수준의 빠른 속도
-   - 지연 시간 최소화
+   - Kùzu DB 조작이 로컬 파일 I/O 수준으로 매우 빠름
 
-3. **선택적 A2A 노출**
-   - `expose: true` 설정 시 Sub-Agent를 A2A 엔드포인트로 노출
-   - 다른 Agent에서 재사용 가능
-   - 필요에 따라 노출 여부 제어
+3. **클라우드 비용 제로**
+   - Spanner 인스턴스 유지 비용 없이 로컬 스토리지 기반으로 PoC/테스트 완벽 대응
 
 4. **로컬 개발 편의성**
    - `adk web` 실행 시 Main + Sub-Agents 모두 로드
-   - 전체 워크플로우를 로컬에서 테스트 가능
-   - 별도 배포 없이 통합 테스트
-
-5. **비용 효율성**
-   - 단일 Cloud Run 인스턴스만 필요
-   - 여러 Agent를 별도 배포하는 것보다 저렴
+   - 전체 워크플로우를 로컬에서 즉각적으로 통합 테스트
 
 #### ⚠️ 고려사항
 
-1. **결합도**: Sub-Agent가 Main Agent와 함께 배포되므로 독립적 업데이트 제한
-2. **스케일링**: 모든 Agent가 동일한 리소스 풀 공유
-3. **장애 격리**: 한 Sub-Agent의 문제가 전체 시스템에 영향 가능
+1. **동시성 제어**: Kùzu는 단일 Write 연결만 허용하므로, 여러 Agent가 동시에 DDL을 실행하지 않도록 주의
+2. **장애 격리**: 한 Sub-Agent의 문제가 전체 시스템에 영향 가능
 
 ### 폴더 구조
 
 ```
 graph-designer-agent/
-├── .env                          # 환경 변수 (GCP 및 Spanner 설정)
+├── .env.example                  # 환경 변수 템플릿
 ├── .adk/                         # ADK 내부 캐시 (문제 발생 시 삭제 권장)
+├── kuzu_db/                      # 로컬 Kùzu 데이터베이스 스토리지 (자동 생성)
 ├── main_agent/                   # Main Agent 디렉토리
 │   ├── root_agent.yaml           # Main Agent 설정
 │   └── __init__.py               # 패키지 구성을 위한 파일
@@ -140,18 +131,13 @@ graph-designer-agent/
 │   │   ├── __init__.py
 │   │   └── tools/
 │   │       ├── __init__.py
-│   │       └── mermaid_renderer.py # 시각화 도구 (Phase 2)
-│   └── spanner_deployer/
+│   │       └── mermaid_renderer.py # 시각화 도구 (필요시)
+│   └── kuzu_deployer/
 │       ├── root_agent.yaml       # Sub-Agent 2 설정
 │       ├── __init__.py
 │       └── tools/
 │           ├── __init__.py
-│           └── spanner_client.py   # Spanner 조작 도구
-├── scripts/                      # 보조 스크립트
-│   ├── show_spanner.sh           # Spanner 설정 정보 확인
-│   ├── query_spanner.sh          # DB 조회 및 쿼리 실행 (Wrapper)
-│   ├── query_spanner.py          # DB 조회 및 쿼리 실행 (Python)
-│   └── setup_spanner.sh          # Spanner 인프라 생성 (Enterprise 필수)
+│           └── kuzu_client.py      # Kùzu 조작 도구
 └── README.md
 ```
 
@@ -160,8 +146,8 @@ graph-designer-agent/
 | Agent | 역할 | 핵심 기능 |
 |-------|------|----------|
 | **Main Agent** | 오케스트레이터 | - 사용자 의도 파악<br>- Sub-Agent 호출 결정<br>- 워크플로우 조율<br>- 최종 응답 통합 |
-| **Sub-Agent 1: Schema Designer** | 스키마 설계 전문가 | - 비즈니스 요구사항 분석<br>- 그래프 모델링<br>- DDL 생성<br>- 시각화 |
-| **Sub-Agent 2: Spanner Deployer** | 배포 및 운영 전문가 | - DDL 검증<br>- Spanner 인스턴스 연결<br>- 스키마 배포<br>- 샘플 데이터 삽입<br>- 쿼리 테스트 |
+| **Sub-Agent 1: Schema Designer** | 스키마 설계 전문가 | - 비즈니스 요구사항 분석<br>- 그래프 모델링<br>- Cypher DDL 생성<br>- 시각화 |
+| **Sub-Agent 2: Kuzu Deployer** | 배포 및 운영 전문가 | - DDL 검증<br>- 로컬 Kùzu 연결<br>- 스키마 배포<br>- 샘플 데이터 삽입<br>- 쿼리 테스트 |
 
 ### 핵심 기능 매핑
 
@@ -193,16 +179,16 @@ graph-designer-agent/
 - Sub-Agent의 결과를 통합하여 사용자에게 전달합니다.
 
 **사용 가능한 Sub-Agents:**
-1. **Schema Designer**: 그래프 스키마 설계 및 DDL 생성
-2. **Spanner Deployer**: Spanner 배포 및 검증
+1. **Schema Designer**: 그래프 스키마 설계 및 Kuzu Cypher DDL 생성
+2. **Kuzu Deployer**: 로컬 Kùzu DB 배포 및 검증
 
 **워크플로우 판단:**
 - "스키마 만들어줘", "그래프 설계" → Schema Designer 호출
-- "배포해줘", "Spanner에 적용" → Spanner Deployer 호출
+- "배포해줘", "DB에 적용" → Kuzu Deployer 호출
 - "만들고 배포까지" → 순차적으로 두 Agent 호출
 
 **A2A 통신:**
-- Schema Designer의 DDL을 Spanner Deployer에게 직접 전달 가능
+- Schema Designer의 DDL을 Kuzu Deployer에게 직접 전달 가능
 - 사용자 개입 최소화
 ```
 
@@ -212,11 +198,11 @@ graph-designer-agent/
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-3-flash-preview
+model: gemini-2.0-flash
 name: graph_designer_main
 description: |
-  그래프 스키마 설계 및 Spanner 배포 통합 시스템.
-  비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Spanner에 배포합니다.
+  그래프 스키마 설계 및 Kùzu DB 배포 통합 시스템.
+  비즈니스 요구사항을 입력받아 Graph DB 스키마를 자동 생성하고 Kùzu에 배포합니다.
 
 instruction: |
   당신은 Graph Designer AI의 메인 오케스트레이터입니다.
@@ -224,44 +210,39 @@ instruction: |
 
 sub_agents:
   - config_path: ../sub_agents/schema_designer/root_agent.yaml
-  - config_path: ../sub_agents/spanner_deployer/root_agent.yaml
+  - config_path: ../sub_agents/kuzu_deployer/root_agent.yaml
 ```
 
 **Sub-Agent 1 (sub_agents/schema_designer/root_agent.yaml):**
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-3-flash-preview
+model: gemini-2.0-flash
 name: schema_designer
-description: Google Cloud Spanner Graph 스키마 설계 전문 Agent
+description: Kùzu Graph 스키마 설계 전문 Agent
 
 instruction: |
-  당신은 Google Cloud Spanner Graph 아키텍트입니다.
-  비즈니스 요구사항을 분석하여 그래프 스키마를 설계합니다.
+  당신은 Kùzu Graph Database 아키텍트입니다.
+  비즈니스 요구사항을 분석하여 Kùzu의 CREATE NODE TABLE 및 CREATE REL TABLE DDL을 생성합니다.
   ... (중략) ...
-  시각화 단계에서 반드시 render_mermaid 도구를 호출하여 이미지 URL을 생성하세요.
-
-tools:
-  - name: sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid
 ```
 
-**Sub-Agent 2 (sub_agents/spanner_deployer/root_agent.yaml):**
+**Sub-Agent 2 (sub_agents/kuzu_deployer/root_agent.yaml):**
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-3-flash-preview
-name: spanner_deployer
-description: Google Cloud Spanner Graph 배포 및 검증 전문 Agent
+model: gemini-2.0-flash
+name: kuzu_deployer
+description: Kùzu Embedded Graph 배포 및 검증 전문 Agent
 
 instruction: |
-  당신은 Google Cloud Spanner Graph 배포 전문가입니다.
+  당신은 Kùzu Graph Database 배포 전문가입니다.
   DDL을 검증하여 배포하고, 쿼리를 통해 결과를 확인합니다.
-  **중요**: Spanner Graph는 Enterprise 이상 에디션에서만 지원됩니다. Standard 에디션 사용 시 배포가 실패함을 사용자에게 알리세요.
-  반드시 등록된 도구(deploy_spanner_ddl, execute_spanner_query)를 사용하여 작업을 수행하세요.
+  반드시 등록된 도구(deploy_kuzu_ddl, execute_kuzu_query)를 사용하여 작업을 수행하세요.
 
 tools:
-  - name: sub_agents.spanner_deployer.tools.spanner_client.deploy_spanner_ddl
-  - name: sub_agents.spanner_deployer.tools.spanner_client.execute_spanner_query
+  - name: sub_agents.kuzu_deployer.tools.kuzu_client.deploy_kuzu_ddl
+  - name: sub_agents.kuzu_deployer.tools.kuzu_client.execute_kuzu_query
 ```
 
 > [!TIP]
@@ -283,7 +264,7 @@ response = await call_sub_agent(
 
 # Sub-Agent 간 직접 통신
 ddl_result = await call_sub_agent(
-    agent_name="spanner_deployer",
+    agent_name="kuzu_deployer",
     message="이 DDL을 배포해줘",
     context={"ddl": response.ddl_statements}
 )
@@ -308,11 +289,11 @@ response = await call_agent(
 #### System Prompt 설계
 
 ```markdown
-당신은 Google Cloud Spanner Graph 아키텍트입니다.
+당신은 Kùzu Graph Database 아키텍트입니다.
 
 **역할:**
 - 사용자의 비즈니스 요구사항을 분석하여 그래프 데이터베이스 스키마를 설계합니다.
-- Nodes, Edges, Properties를 정의하고 Spanner CREATE PROPERTY GRAPH DDL을 생성합니다.
+- Nodes, Edges, Properties를 정의하고 Kùzu Cypher DDL을 생성합니다.
 
 **출력 형식:**
 1. **비즈니스 분석**: 핵심 엔티티와 관계 요약
@@ -320,13 +301,12 @@ response = await call_agent(
    - Nodes: [노드명, 속성 목록]
    - Edges: [관계명, 출발노드, 도착노드, 속성]
 3. **시각화**: 그래프 다이어그램 이미지
-4. **DDL 코드**: Spanner Graph DDL (복사 가능한 코드 블록)
+4. **DDL 코드**: Kùzu Cypher DDL (복사 가능한 코드 블록)
 5. **설계 의도**: AI의 설계 근거 설명
 
 **제약사항:**
-- Spanner Graph 문법을 정확히 준수
+- Kùzu Cypher 확장을 정확히 준수 (CREATE NODE TABLE, CREATE REL TABLE)
 - 노드/엣지 이름은 명확하고 일관성 있게 작성
-- 비즈니스 로직을 그래프 구조로 자연스럽게 표현
 ```
 
 #### 응답 플로우
@@ -343,17 +323,15 @@ response = await call_agent(
   - Edges 정의
   - Properties 정의
   ↓
-[3단계] 시각화 이미지 생성
-  - generate_image 도구 사용
-  - 노드와 엣지를 명확히 표현
+[3단계] 시각화 생성
+  - Mermaid 다이어그램 작성
   ↓
 [4단계] DDL 코드 생성
-  - Spanner Graph DDL 문법
-  - 실행 가능한 코드 제공
+  - Kùzu Cypher DDL 문법
+  - 실행 가능한 여러 문장을 세미콜론(;)으로 구분
   ↓
 [5단계] 설명 및 응답
   - 설계 의도 설명
-  - 이미지 + 코드 제공
 ```
 
 ### Phase 2: 대화형 수정 기능
@@ -366,8 +344,8 @@ response = await call_agent(
 
 **응답 방식:**
 - 수정된 부분 하이라이트
-- 새로운 그래프 이미지 재생성
-- 변경된 DDL 코드 제공
+- 새로운 Mermaid 다이어그램 재생성
+- 변경된 DDL 코드 전체 제공
 ```
 
 ### Phase 3: DDL 출력 및 인계
@@ -375,142 +353,95 @@ response = await call_agent(
 ```markdown
 **최종 출력:**
 - 완성된 DDL 코드 (마크다운 코드 블록)
-- 그래프 시각화 이미지
+- 그래프 시각화 (Mermaid)
 - 설계 문서
-- "배포하려면 Spanner Deployer Agent에게 이 DDL을 전달하세요" 안내
+- "배포하려면 Kuzu Deployer Agent에게 이 DDL을 전달하세요" 안내
 ```
 
 ---
 
-### Sub-Agent 2: Spanner Deployer
+### Sub-Agent 2: Kuzu Deployer
 
 #### System Prompt 설계
 
 ```markdown
-당신은 Google Cloud Spanner Graph 배포 전문가입니다.
+당신은 Kùzu Graph Database 배포 전문가입니다.
 
 **역할:**
-- Spanner Graph DDL을 검증하고 실제 Spanner 인스턴스에 배포합니다.
-- 배포 후 검증 쿼리를 실행하여 정상 작동을 확인합니다.
+- Kùzu Cypher DDL을 검증하고 로컬 Kùzu DB(`./kuzu_db`)에 배포합니다.
+- 배포 후 테스트 데이터를 삽입하고 쿼리를 실행하여 정상 작동을 확인합니다.
 
 **작업 프로세스:**
-1. DDL 문법 검증
-2. Spanner 인스턴스 연결 확인
-3. 기존 스키마 백업 (있는 경우)
-4. DDL 실행
-5. 샘플 데이터 삽입 (선택)
-6. 검증 쿼리 실행
-7. 배포 결과 리포트 생성
+1. DDL 문법 검증 (Kuzu Cypher 문법 확인)
+2. 배포 계획 제시 및 사용자 승인 대기
+3. DDL 실행 (`deploy_kuzu_ddl` 도구 사용)
+4. 샘플 데이터 삽입 및 검증 쿼리 실행 (`execute_kuzu_query` 도구 사용)
+5. 배포 결과 리포트 생성
 
 **안전 장치:**
-- 프로덕션 배포 전 사용자 확인 필수
-- 롤백 계획 제시
-- 에러 발생 시 상세 로그 제공
+- 배포 전 반드시 "배포를 진행할까요?"라고 사용자 승인 요청
+- DDL 실행 시 세미콜론 단위로 분리하여 실행
 ```
 
 #### 배포 워크플로우
 
 ```
 [1단계] DDL 수신 및 검증
-  - 문법 체크 (dry-run)
-  - 의존성 확인
+  - Kùzu Cypher 문법 체크 (CREATE NODE/REL TABLE)
   ↓
-[2단계] 환경 설정 확인
-  - 프로젝트 ID 확인
-  - Spanner 인스턴스 확인
-  - 데이터베이스 확인
-  - 권한 확인
-  ↓
-[3단계] 배포 계획 제시
+[2단계] 배포 계획 제시
   - 실행될 DDL 요약
-  - 영향 범위 분석
   - 사용자 승인 대기
   ↓
-[4단계] 실행
-  - DDL 실행 (gcloud CLI 또는 Python SDK)
-  - 진행 상황 모니터링
+[3단계] 실행
+  - DDL 실행 (deploy_kuzu_ddl 도구)
   ↓
-[5단계] 검증
-  - 스키마 생성 확인
-  - 샘플 쿼리 실행
+[4단계] 검증
+  - 샘플 데이터 삽입 (선택적)
+  - Cypher MATCH 쿼리 실행 (execute_kuzu_query 도구)
   - 결과 리포트
 ```
 
 #### 구현 방법
 
-**Option 1: gcloud CLI 사용**
-```bash
-# DDL 파일 생성
-cat > schema.sql << 'EOF'
-CREATE PROPERTY GRAPH TelecomGraph
-NODE TABLES (
-  Plan,
-  PlanCategory
-)
-EDGE TABLES (
-  PlanBelongsTo
-    SOURCE KEY(plan_id) REFERENCES Plan(id)
-    DESTINATION KEY(category_id) REFERENCES PlanCategory(id)
-    LABEL BELONGS_TO
-);
-EOF
-
-# Spanner에 배포
-gcloud spanner databases ddl update DATABASE_NAME \
-  --instance=INSTANCE_NAME \
-  --ddl-file=schema.sql \
-  --project=PROJECT_ID
-```
-
-**Option 2: Python SDK 사용**
+**Python SDK (Kùzu) 사용**
 ```python
-from google.cloud import spanner
+import kuzu
 
-def deploy_graph_schema(project_id, instance_id, database_id, ddl_statements):
-    spanner_client = spanner.Client(project=project_id)
-    instance = spanner_client.instance(instance_id)
-    database = instance.database(database_id)
+def deploy_graph_schema(db_path, ddl_statements):
+    db = kuzu.Database(db_path)
+    conn = kuzu.Connection(db)
     
     # DDL 실행
-    operation = database.update_ddl(ddl_statements)
-    operation.result(timeout=300)
+    for stmt in ddl_statements:
+        conn.execute(stmt)
     
     return "배포 완료"
 ```
 
 **Agent가 실행할 명령어:**
 ```markdown
-1. DDL 파일 생성 (write_to_file)
-2. 배포 도구 실행 (deploy_spanner_ddl)
-3. 검증 쿼리 실행 (execute_spanner_query)
+1. DDL 수신
+2. 배포 도구 실행 (deploy_kuzu_ddl)
+3. 검증 쿼리 실행 (execute_kuzu_query)
 4. 결과 확인 및 리포트
 ```
 
-### 보조 스크립트 활용
-
-사용자가 터미널에서 직접 환경을 확인하고 DB를 조회할 수 있도록 보조 스크립트를 제공합니다.
-
-- **show_spanner.sh**: `.env`에 설정된 프로젝트, 인스턴스, DB ID를 한 화면에 출력합니다.
-- **query_spanner.sh**: SQL 또는 GQL 쿼리를 자유롭게 실행하여 배포 결과를 검증할 수 있습니다.
-
 #### 샘플 데이터 삽입 (선택)
 
-```sql
--- Agent가 생성할 INSERT 문 예시
-INSERT INTO Plan (id, name, price, data_limit)
-VALUES 
-  (1, '5G 시그니처', 130000, 60),
-  (2, '5G 프리미어', 115000, 50);
+```cypher
+-- Agent가 생성할 Cypher 쿼리 예시
+CREATE (p1:Plan {id: '1', name: '5G 시그니처', price: 130000, data_limit: 60});
+CREATE (p2:Plan {id: '2', name: '5G 프리미어', price: 115000, data_limit: 50});
 
-INSERT INTO PlanCategory (id, category_name)
-VALUES
-  (1, '5G 단말기'),
-  (2, '5G 프리미어');
+CREATE (c1:PlanCategory {id: '1', category_name: '5G 단말기'});
+CREATE (c2:PlanCategory {id: '2', category_name: '5G 프리미어'});
 
-INSERT INTO PlanBelongsTo (plan_id, category_id)
-VALUES
-  (1, 1),
-  (2, 2);
+MATCH (p:Plan {id: '1'}), (c:PlanCategory {id: '1'})
+CREATE (p)-[:BELONGS_TO]->(c);
+
+MATCH (p:Plan {id: '2'}), (c:PlanCategory {id: '2'})
+CREATE (p)-[:BELONGS_TO]->(c);
 ```
 
 ---
@@ -583,9 +514,9 @@ graph TD
 | **유지보수** | 코드 관리 필요 | 프롬프트 수정만 | ✅ Agent 우세 |
 | **인터랙티브 편집** | 드래그 앤 드롭 | 대화형 수정 | ⚠️ 원본 우세 |
 | **실시간 스트리밍** | SSE 지원 | 일반 응답 | ⚠️ 원본 우세 |
-| **배포 복잡도** | Cloud Run + 인프라 | Agent 공유만 | ✅ Agent 우세 |
+| **배포 복잡도** | Cloud Run + 인프라 | 로컬 DB(Kuzu) 사용 | ✅ Agent 우세 |
 | **확장성** | 커스텀 기능 추가 용이 | 제한적 | ⚠️ 원본 우세 |
-| **비용** | 인프라 + 개발 비용 | Agent 사용료만 | ✅ Agent 우세 |
+| **비용** | 인프라 + 개발 비용 | 클라우드 비용 제로 | ✅ Agent 우세 |
 
 ---
 
@@ -604,7 +535,7 @@ graph TD
   ↓
 [Sub-Agent 1: Schema Designer]
   → 스키마 설계
-  → DDL 생성
+  → DDL 생성 (Kuzu Cypher)
   → 시각화 제공
   → Main Agent에게 반환
   ↓
@@ -620,13 +551,13 @@ graph TD
   → DDL 수정
   → 새 시각화 제공
   ↓
-사용자: "이제 Spanner에 배포해줘"
+사용자: "이제 로컬에 배포해줘"
   ↓
 [Main Agent]
   → 의도 파악: 배포 요청
   → A2A 통신: Sub-Agent 1의 DDL을 Sub-Agent 2에게 전달
   ↓
-[Sub-Agent 2: Spanner Deployer]
+[Sub-Agent 2: Kuzu Deployer]
   → DDL 수신 (A2A)
   → DDL 검증
   → 배포 계획 제시
@@ -640,8 +571,8 @@ graph TD
 [Main Agent]
   → Sub-Agent 2 재호출
   ↓
-[Sub-Agent 2: Spanner Deployer]
-  → Spanner 배포 실행
+[Sub-Agent 2: Kuzu Deployer]
+  → 로컬 배포 실행 (kuzu_db)
   → 샘플 데이터 삽입
   → 검증 쿼리 실행
   → 배포 리포트 생성
@@ -650,7 +581,7 @@ graph TD
 #### 시나리오 2: End-to-End 자동화
 
 ```
-사용자: "LG U+ 요금제 스키마 만들고 바로 Spanner에 배포해줘"
+사용자: "LG U+ 요금제 스키마 만들고 바로 로컬 DB에 배포해줘"
   ↓
 [Main Agent]
   → 의도 파악: 설계 + 배포 통합 요청
@@ -660,7 +591,7 @@ graph TD
   → 스키마 설계 + DDL 생성
   → A2A: Sub-Agent 2에게 DDL 직접 전달
   ↓
-[Sub-Agent 2: Spanner Deployer]
+[Sub-Agent 2: Kuzu Deployer]
   → DDL 수신 (A2A)
   → 검증 + 배포 계획
   → Main Agent에게 반환
@@ -1317,12 +1248,12 @@ sub_agents:
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-3-flash-preview
+model: gemini-2.0-flash
 name: schema_designer
 description: |
-  Google Cloud Spanner Graph 스키마 설계 전문 Agent.
+  Kùzu Graph 스키마 설계 전문 Agent.
   비즈니스 요구사항을 분석하여 Nodes, Edges, Properties를 정의하고
-  Spanner CREATE PROPERTY GRAPH DDL을 생성합니다.
+  Kùzu CREATE NODE/REL TABLE DDL을 생성합니다.
 
 instruction: |
   ... (메인 섹션의 instruction 내용과 동일) ...
@@ -1335,7 +1266,7 @@ instruction: |
 ```markdown
 # Schema Designer Agent
 
-당신은 **Google Cloud Spanner Graph 아키텍트**입니다.
+당신은 **Kùzu Graph Database 아키텍트**입니다.
 
 ## 역할
 
@@ -1378,38 +1309,16 @@ graph TD
 
 **시각화 참고:**
 - ADK 웹 UI에서 Mermaid 다이어그램 렌더링을 지원합니다.
-- 복사하여 외부 툴(Mermaid Live Editor 등)에서 활용 가능합니다.
 
-### 4. Spanner Graph DDL
+### 4. Kùzu Graph DDL
 
-```sql
--- 테이블 생성
-CREATE TABLE NodeTable1 (
-  id STRING(36) NOT NULL,
-  property1 STRING(MAX),
-  property2 INT64,
-) PRIMARY KEY (id);
+```cypher
+-- Node 테이블 생성
+CREATE NODE TABLE NodeTable1 (id STRING, property1 STRING, property2 INT64, PRIMARY KEY (id));
+CREATE NODE TABLE NodeTable2 (id STRING, PRIMARY KEY (id));
 
-CREATE TABLE EdgeTable1 (
-  source_id STRING(36) NOT NULL,
-  target_id STRING(36) NOT NULL,
-  edge_property STRING(MAX),
-  FOREIGN KEY (source_id) REFERENCES NodeTable1(id),
-  FOREIGN KEY (target_id) REFERENCES NodeTable2(id),
-) PRIMARY KEY (source_id, target_id);
-
--- Property Graph 정의
-CREATE PROPERTY GRAPH MyGraph
-NODE TABLES (
-  NodeTable1 AS Node1,
-  NodeTable2 AS Node2
-)
-EDGE TABLES (
-  EdgeTable1
-    SOURCE KEY(source_id) REFERENCES Node1(id)
-    DESTINATION KEY(target_id) REFERENCES Node2(id)
-    LABEL RELATIONSHIP_NAME
-);
+-- Rel 테이블 생성
+CREATE REL TABLE EdgeTable1 (FROM NodeTable1 TO NodeTable2, edge_property STRING);
 ```
 
 ### 5. 설계 의도 설명
@@ -1417,17 +1326,15 @@ EDGE TABLES (
 **AI의 설계 근거:**
 - 왜 이런 구조로 설계했는지 설명
 - 비즈니스 로직과 그래프 구조의 연결
-- 확장 가능성 및 쿼리 최적화 고려사항
 
-## Spanner Graph 문법 규칙
+## Kùzu Graph 문법 규칙
 
 ### 필수 준수 사항
 
-1. **테이블 먼저 생성**: Property Graph 정의 전에 모든 Node/Edge 테이블 생성
-2. **Primary Key 필수**: 모든 테이블에 PRIMARY KEY 정의
-3. **Foreign Key 설정**: Edge 테이블은 Node 테이블을 참조하는 FOREIGN KEY 필요
-4. **Label 명명**: Edge Label은 대문자와 언더스코어 사용 (예: BELONGS_TO)
-5. **데이터 타입**: Spanner 지원 타입 사용 (STRING, INT64, FLOAT64, BOOL, TIMESTAMP, etc.)
+1. **노드 테이블 먼저 생성**: CREATE NODE TABLE 구문 사용
+2. **Primary Key 필수**: 노드 테이블에 반드시 PRIMARY KEY 정의
+3. **관계 정의**: CREATE REL TABLE 구문 사용 시 출발지(FROM)와 목적지(TO) 명시
+4. **데이터 타입**: Kùzu 지원 타입 사용 (STRING, INT64, DOUBLE, BOOLEAN, DATE 등)
 
 ## 예시: LG U+ 통신사 요금제
 
@@ -1453,80 +1360,17 @@ LG U+ 요금제 상담 챗봇을 위한 그래프 DB 설계:
 - REQUIRES: Plan → Condition
 
 **DDL:**
-```sql
+```cypher
 -- Node Tables
-CREATE TABLE Plan (
-  id STRING(36) NOT NULL,
-  name STRING(100),
-  price INT64,
-  data_limit INT64,
-  voice_limit INT64,
-) PRIMARY KEY (id);
+CREATE NODE TABLE Plan (id STRING, name STRING, price INT64, data_limit INT64, voice_limit INT64, PRIMARY KEY (id));
+CREATE NODE TABLE PlanCategory (id STRING, category_name STRING, description STRING, PRIMARY KEY (id));
+CREATE NODE TABLE Benefit (id STRING, benefit_type STRING, description STRING, value STRING, PRIMARY KEY (id));
+CREATE NODE TABLE Condition (id STRING, condition_type STRING, value STRING, description STRING, PRIMARY KEY (id));
 
-CREATE TABLE PlanCategory (
-  id STRING(36) NOT NULL,
-  category_name STRING(100),
-  description STRING(MAX),
-) PRIMARY KEY (id);
-
-CREATE TABLE Benefit (
-  id STRING(36) NOT NULL,
-  benefit_type STRING(50),
-  description STRING(MAX),
-  value STRING(100),
-) PRIMARY KEY (id);
-
-CREATE TABLE Condition (
-  id STRING(36) NOT NULL,
-  condition_type STRING(50),
-  value STRING(100),
-  description STRING(MAX),
-) PRIMARY KEY (id);
-
--- Edge Tables
-CREATE TABLE PlanBelongsTo (
-  plan_id STRING(36) NOT NULL,
-  category_id STRING(36) NOT NULL,
-  FOREIGN KEY (plan_id) REFERENCES Plan(id),
-  FOREIGN KEY (category_id) REFERENCES PlanCategory(id),
-) PRIMARY KEY (plan_id, category_id);
-
-CREATE TABLE PlanIncludesBenefit (
-  plan_id STRING(36) NOT NULL,
-  benefit_id STRING(36) NOT NULL,
-  FOREIGN KEY (plan_id) REFERENCES Plan(id),
-  FOREIGN KEY (benefit_id) REFERENCES Benefit(id),
-) PRIMARY KEY (plan_id, benefit_id);
-
-CREATE TABLE PlanRequiresCondition (
-  plan_id STRING(36) NOT NULL,
-  condition_id STRING(36) NOT NULL,
-  FOREIGN KEY (plan_id) REFERENCES Plan(id),
-  FOREIGN KEY (condition_id) REFERENCES Condition(id),
-) PRIMARY KEY (plan_id, condition_id);
-
--- Property Graph
-CREATE PROPERTY GRAPH TelecomGraph
-NODE TABLES (
-  Plan,
-  PlanCategory,
-  Benefit,
-  Condition
-)
-EDGE TABLES (
-  PlanBelongsTo
-    SOURCE KEY(plan_id) REFERENCES Plan(id)
-    DESTINATION KEY(category_id) REFERENCES PlanCategory(id)
-    LABEL BELONGS_TO,
-  PlanIncludesBenefit
-    SOURCE KEY(plan_id) REFERENCES Plan(id)
-    DESTINATION KEY(benefit_id) REFERENCES Benefit(id)
-    LABEL INCLUDES,
-  PlanRequiresCondition
-    SOURCE KEY(plan_id) REFERENCES Plan(id)
-    DESTINATION KEY(condition_id) REFERENCES Condition(id)
-    LABEL REQUIRES
-);
+-- Rel Tables
+CREATE REL TABLE PlanBelongsTo (FROM Plan TO PlanCategory);
+CREATE REL TABLE PlanIncludesBenefit (FROM Plan TO Benefit);
+CREATE REL TABLE PlanRequiresCondition (FROM Plan TO Condition);
 ```
 
 ## 대화형 수정 지원
@@ -1534,7 +1378,7 @@ EDGE TABLES (
 사용자가 수정을 요청하면:
 
 1. **속성 추가**: "Plan 노드에 discount_rate 속성 추가해줘"
-   → ALTER TABLE 또는 새 DDL 생성
+   → ALTER TABLE 또는 새 DDL 전체 생성
 
 2. **관계 추가**: "PlanCategory와 Benefit 사이에 OFFERS 관계 추가"
    → 새 Edge 테이블 및 Property Graph 업데이트
@@ -1544,7 +1388,7 @@ EDGE TABLES (
 
 **응답 형식:**
 - 수정된 부분 하이라이트
-- 새로운 Mermaid 다이어그램 또는 이미지
+- 새로운 Mermaid 다이어그램
 - 업데이트된 DDL 코드
 
 ## 최종 출력
@@ -1559,10 +1403,10 @@ EDGE TABLES (
 [Nodes 및 Edges 요약]
 
 ### 시각화
-[Mermaid 다이어그램 또는 이미지]
+[Mermaid 다이어그램]
 
 ### DDL 코드
-```sql
+```cypher
 [완전한 DDL]
 ```
 
@@ -1571,97 +1415,60 @@ EDGE TABLES (
 
 ---
 
-💡 **다음 단계**: 이 DDL을 Spanner에 배포하려면 "배포해줘"라고 말씀해주세요.
+💡 **다음 단계**: 이 DDL을 Kùzu에 배포하려면 "배포해줘"라고 말씀해주세요.
 ```
 ```
 
-#### 3. Spanner Deployer Sub-Agent
+#### 3. Kuzu Deployer Sub-Agent
 
-**sub_agents/spanner_deployer/root_agent.yaml:**
+**sub_agents/kuzu_deployer/root_agent.yaml:**
 
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-3-flash-preview
-name: spanner_deployer
+model: gemini-2.0-flash
+name: kuzu_deployer
 description: |
-  Google Cloud Spanner Graph 배포 및 검증 전문 Agent.
-  DDL을 검증하고 배포 가이드를 제공합니다.
+  Kùzu Embedded Graph 배포 및 검증 전문 Agent.
+  DDL을 검증하고 배포를 실행합니다.
 
 instruction: |
   ... (시스템 지침) ...
-
-# 실제 배포는 보안을 위해 사용자가 스크립트(`scripts/setup_spanner.sh` 등)를 통해 실행하는 것을 권장합니다.
 ```
 
-**sub_agents/spanner_deployer/instruction:** (YAML 파일 내에 포함됨)
+**sub_agents/kuzu_deployer/instruction:** (YAML 파일 내에 포함됨)
 
 ```markdown
-# Spanner Deployer Agent
+# Kuzu Deployer Agent
 
-당신은 **Google Cloud Spanner Graph 배포 전문가**입니다.
+당신은 **Kùzu Graph 배포 전문가**입니다.
 
 ## 역할
 
-Spanner Graph DDL을 검증하고 실제 Spanner 인스턴스에 배포합니다.
+Kùzu Cypher DDL을 검증하고 실제 로컬 인스턴스에 배포합니다.
 
 ## 작업 프로세스
 
 ### 1단계: DDL 수신 및 검증
 
 **문법 체크:**
-- Spanner Graph DDL 문법 준수 확인
-- 테이블 정의 순서 확인 (Node Tables → Edge Tables → Property Graph)
-- Foreign Key 참조 무결성 확인
-
-**Dry-run 실행:**
-```bash
-# DDL 파일 생성
-cat > schema.sql << 'EOF'
-[DDL 내용]
-EOF
-
-# 문법 검증 (실제 실행 없이)
-gcloud spanner databases ddl update $DATABASE_ID \
-  --instance=$INSTANCE_ID \
-  --ddl-file=schema.sql \
-  --project=$PROJECT_ID \
-  --dry-run
-```
+- Kùzu Cypher DDL 문법 준수 확인
+- 테이블 정의 순서 확인 (Node Tables → Rel Tables)
 
 ### 2단계: 환경 설정 확인
 
-**필수 환경 변수:**
-- `GCP_PROJECT_ID`: GCP 프로젝트 ID
-- `SPANNER_INSTANCE_ID`: Spanner 인스턴스 ID
-- `SPANNER_DATABASE_ID`: 데이터베이스 ID
-
-**확인 명령어:**
-```bash
-# 인스턴스 존재 확인
-gcloud spanner instances describe $INSTANCE_ID --project=$PROJECT_ID
-
-# 데이터베이스 존재 확인
-gcloud spanner databases describe $DATABASE_ID \
-  --instance=$INSTANCE_ID \
-  --project=$PROJECT_ID
-```
+**확인 사항:**
+- `./kuzu_db` 폴더 접근 가능 여부
 
 ### 3단계: 배포 계획 제시
 
 **사용자에게 제시할 정보:**
 ```markdown
-## 🚀 Spanner 배포 계획
+## 🚀 Kùzu 배포 계획
 
 ### 실행될 DDL 요약
-- 생성될 테이블: [테이블 목록]
-- 생성될 Property Graph: [그래프 이름]
-- 예상 소요 시간: 약 30초
-
-### 영향 범위
-- 대상 인스턴스: `$INSTANCE_ID`
-- 대상 데이터베이스: `$DATABASE_ID`
-- ⚠️ 기존 동일 이름 테이블이 있으면 에러 발생
+- 생성될 노드 테이블: [테이블 목록]
+- 생성될 관계 테이블: [테이블 목록]
 
 ### 승인 필요
 계속 진행하시겠습니까? (yes/no)
@@ -1670,79 +1477,27 @@ gcloud spanner databases describe $DATABASE_ID \
 ### 4단계: DDL 실행
 
 **실행 명령어:**
-```bash
-# DDL 파일 생성
-write_to_file(
-  path="schema.sql",
-  content="[DDL 내용]"
-)
-
-# Spanner에 배포
-run_command(
-  command="gcloud spanner databases ddl update $DATABASE_ID \
-    --instance=$INSTANCE_ID \
-    --ddl-file=schema.sql \
-    --project=$PROJECT_ID",
-  wait_for_completion=True
-)
-```
-
-**Python SDK 사용 (대안):**
 ```python
-from google.cloud import spanner
-
-def deploy_ddl(project_id, instance_id, database_id, ddl_statements):
-    """DDL을 Spanner에 배포"""
-    spanner_client = spanner.Client(project=project_id)
-    instance = spanner_client.instance(instance_id)
-    database = instance.database(database_id)
-    
-    # DDL 실행
-    operation = database.update_ddl(ddl_statements)
-    
-    print("DDL 배포 중...")
-    operation.result(timeout=300)  # 최대 5분 대기
-    
-    print("✅ DDL 배포 완료")
-    return True
+run_command(
+  tool="deploy_kuzu_ddl",
+  kwargs={"ddl": "[수신된 DDL]"}
+)
 ```
 
 ### 5단계: 검증
 
-**스키마 생성 확인:**
-```bash
-# 테이블 목록 조회
-gcloud spanner databases ddl describe $DATABASE_ID \
-  --instance=$INSTANCE_ID \
-  --project=$PROJECT_ID
-```
-
 **샘플 데이터 삽입 (선택):**
-```sql
--- LG U+ 요금제 샘플 데이터
-INSERT INTO Plan (id, name, price, data_limit, voice_limit)
-VALUES 
-  ('plan-001', '5G 시그니처', 130000, 60, 999999),
-  ('plan-002', '5G 프리미어 에센셜', 115000, 50, 999999),
-  ('plan-003', '5G 프리미어', 95000, 40, 999999);
-
-INSERT INTO PlanCategory (id, category_name, description)
-VALUES
-  ('cat-001', '5G 단말기', '5G 단말기 요금제'),
-  ('cat-002', '5G 프리미어', '5G 프리미어 요금제');
-
-INSERT INTO PlanBelongsTo (plan_id, category_id)
-VALUES
-  ('plan-001', 'cat-001'),
-  ('plan-002', 'cat-002'),
-  ('plan-003', 'cat-002');
+```cypher
+-- 샘플 데이터 삽입
+CREATE (p:Plan {id: 'plan-001', name: '5G 시그니처', price: 130000});
+CREATE (c:PlanCategory {id: 'cat-001', category_name: '5G 단말기'});
+MATCH (p:Plan {id: 'plan-001'}), (c:PlanCategory {id: 'cat-001'}) CREATE (p)-[:PlanBelongsTo]->(c);
 ```
 
 **검증 쿼리 실행:**
-```sql
+```cypher
 -- Graph 쿼리 테스트
-GRAPH TelecomGraph
-MATCH (p:Plan)-[:BELONGS_TO]->(c:PlanCategory)
+MATCH (p:Plan)-[e:PlanBelongsTo]->(c:PlanCategory)
 RETURN p.name, c.category_name
 LIMIT 10;
 ```
@@ -1750,17 +1505,15 @@ LIMIT 10;
 ### 6단계: 배포 리포트 생성
 
 ```markdown
-## ✅ Spanner 배포 완료 리포트
+## ✅ Kùzu 배포 완료 리포트
 
 ### 배포 정보
-- **프로젝트**: $PROJECT_ID
-- **인스턴스**: $INSTANCE_ID
-- **데이터베이스**: $DATABASE_ID
+- **데이터베이스 경로**: `./kuzu_db`
 - **배포 시간**: [타임스탬프]
 
 ### 생성된 리소스
-- **테이블**: Plan, PlanCategory, Benefit, Condition, PlanBelongsTo, PlanIncludesBenefit, PlanRequiresCondition
-- **Property Graph**: TelecomGraph
+- **노드 테이블**: Plan, PlanCategory, Benefit, Condition
+- **관계 테이블**: PlanBelongsTo, PlanIncludesBenefit, PlanRequiresCondition
 
 ### 검증 결과
 ✅ 스키마 생성 확인
@@ -1769,20 +1522,15 @@ LIMIT 10;
 
 ### 다음 단계
 1. **데이터 삽입**: 실제 요금제 데이터를 삽입하세요
-2. **쿼리 테스트**: Graph 쿼리로 관계 탐색을 테스트하세요
-3. **애플리케이션 연동**: Spanner Client를 사용하여 앱에 연결하세요
-
-### Spanner 콘솔 링크
-https://console.cloud.google.com/spanner/instances/$INSTANCE_ID/databases/$DATABASE_ID?project=$PROJECT_ID
+2. **쿼리 테스트**: Cypher 쿼리로 관계 탐색을 테스트하세요
 ```
 
 ## 안전 장치
 
 ### 프로덕션 배포 전 확인
 
-1. **백업 확인**: 기존 데이터가 있으면 백업 권장
+1. **Lock 에러 확인**: `kuzu_db`가 다른 프로세스에 의해 사용 중이지 않은지 확인
 2. **사용자 승인**: 배포 전 반드시 사용자 확인
-3. **롤백 계획**: 에러 발생 시 롤백 방법 제시
 
 ### 에러 처리
 
@@ -1790,214 +1538,10 @@ https://console.cloud.google.com/spanner/instances/$INSTANCE_ID/databases/$DATAB
 
 1. **테이블 이미 존재**
 ```
-ERROR: Table 'Plan' already exists
+ERROR: Catalog exception: Table Plan already exists.
 ```
-→ **해결책**: 기존 테이블 삭제 또는 다른 이름 사용
-
-2. **Foreign Key 참조 에러**
+→ **해결책**: `DROP TABLE Plan;` 등 쿼리로 삭제 후 재생성 확인 (단 삭제 시 사용자 동의 필수)
 ```
-ERROR: Referenced table 'Plan' does not exist
-```
-→ **해결책**: 테이블 생성 순서 확인 (Node Tables 먼저)
-
-3. **권한 부족**
-```
-ERROR: Permission denied
-```
-→ **해결책**: `roles/spanner.databaseAdmin` 권한 확인
-
-## 도구 사용 예시
-
-### DDL 파일 생성
-```python
-write_to_file(
-    path="/tmp/telecom_graph_schema.sql",
-    content="""
-CREATE TABLE Plan (
-  id STRING(36) NOT NULL,
-  name STRING(100),
-  price INT64,
-) PRIMARY KEY (id);
-
-CREATE PROPERTY GRAPH TelecomGraph
-NODE TABLES (Plan);
-"""
-)
-```
-
-### gcloud 명령어 실행
-```python
-run_command(
-    command="gcloud spanner databases ddl update telecom-graph-db \
-      --instance=graph-designer-instance \
-      --ddl-file=/tmp/telecom_graph_schema.sql \
-      --project=my-gcp-project",
-    safe_to_auto_run=False  # 사용자 승인 필요
-)
-```
-```
-
-#### 4. Spanner Python SDK 래퍼
-
-**sub_agents/spanner_deployer/tools/spanner_client.py:**
-
-```python
-"""Spanner Python SDK 래퍼 모듈"""
-
-import os
-from typing import List, Dict, Any
-from google.cloud import spanner
-from google.cloud.spanner_v1 import param_types
-
-
-class SpannerGraphClient:
-    """Spanner Graph 작업을 위한 클라이언트 래퍼"""
-    
-    def __init__(
-        self,
-        project_id: str = None,
-        instance_id: str = None,
-        database_id: str = None
-    ):
-        """초기화
-        
-        Args:
-            project_id: GCP 프로젝트 ID (기본값: 환경 변수)
-            instance_id: Spanner 인스턴스 ID (기본값: 환경 변수)
-            database_id: 데이터베이스 ID (기본값: 환경 변수)
-        """
-        self.project_id = project_id or os.getenv("GCP_PROJECT_ID")
-        self.instance_id = instance_id or os.getenv("SPANNER_INSTANCE_ID")
-        self.database_id = database_id or os.getenv("SPANNER_DATABASE_ID")
-        
-        if not all([self.project_id, self.instance_id, self.database_id]):
-            raise ValueError(
-                "프로젝트 ID, 인스턴스 ID, 데이터베이스 ID가 필요합니다. "
-                "환경 변수 또는 인자로 제공하세요."
-            )
-        
-        self.client = spanner.Client(project=self.project_id)
-        self.instance = self.client.instance(self.instance_id)
-        self.database = self.instance.database(self.database_id)
-    
-    def deploy_ddl(self, ddl_statements: List[str], timeout: int = 300) -> bool:
-        """DDL을 Spanner에 배포
-        
-        Args:
-            ddl_statements: DDL 문장 리스트
-            timeout: 타임아웃 (초)
-            
-        Returns:
-            성공 여부
-        """
-        try:
-            print(f"DDL 배포 시작: {len(ddl_statements)}개 문장")
-            operation = self.database.update_ddl(ddl_statements)
-            operation.result(timeout=timeout)
-            print("✅ DDL 배포 완료")
-            return True
-        except Exception as e:
-            print(f"❌ DDL 배포 실패: {e}")
-            return False
-    
-    def execute_query(self, query: str) -> List[Dict[str, Any]]:
-        """SQL 쿼리 실행
-        
-        Args:
-            query: SQL 쿼리 문자열
-            
-        Returns:
-            쿼리 결과 (딕셔너리 리스트)
-        """
-        with self.database.snapshot() as snapshot:
-            results = snapshot.execute_sql(query)
-            return [dict(row) for row in results]
-    
-    def execute_graph_query(self, graph_query: str) -> List[Dict[str, Any]]:
-        """Graph 쿼리 실행
-        
-        Args:
-            graph_query: Graph 쿼리 문자열 (GRAPH ... MATCH ... RETURN ...)
-            
-        Returns:
-            쿼리 결과
-        """
-        return self.execute_query(graph_query)
-    
-    def insert_data(self, table: str, columns: List[str], values: List[List[Any]]) -> bool:
-        """데이터 삽입
-        
-        Args:
-            table: 테이블 이름
-            columns: 컬럼 리스트
-            values: 값 리스트 (각 행은 리스트)
-            
-        Returns:
-            성공 여부
-        """
-        try:
-            with self.database.batch() as batch:
-                batch.insert(
-                    table=table,
-                    columns=columns,
-                    values=values
-                )
-            print(f"✅ {table}에 {len(values)}개 행 삽입 완료")
-            return True
-        except Exception as e:
-            print(f"❌ 데이터 삽입 실패: {e}")
-            return False
-    
-    def get_ddl(self) -> List[str]:
-        """현재 데이터베이스의 DDL 조회
-        
-        Returns:
-            DDL 문장 리스트
-        """
-        return self.database.ddl_statements
-    
-    def table_exists(self, table_name: str) -> bool:
-        """테이블 존재 여부 확인
-        
-        Args:
-            table_name: 테이블 이름
-            
-        Returns:
-            존재 여부
-        """
-        query = f"""
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_name = '{table_name}'
-        """
-        results = self.execute_query(query)
-        return len(results) > 0
-
-
-# 사용 예시
-if __name__ == "__main__":
-    # 환경 변수에서 설정 로드
-    client = SpannerGraphClient()
-    
-    # DDL 배포
-    ddl = [
-        """
-        CREATE TABLE Plan (
-          id STRING(36) NOT NULL,
-          name STRING(100),
-          price INT64,
-        ) PRIMARY KEY (id)
-        """,
-        """
-        CREATE PROPERTY GRAPH TelecomGraph
-        NODE TABLES (Plan)
-        """
-    ]
-    client.deploy_ddl(ddl)
-    
-    # 데이터 삽입
-    client.insert_data(
-        table="Plan",
         columns=["id", "name", "price"],
         values=[
             ["plan-001", "5G 시그니처", 130000],
