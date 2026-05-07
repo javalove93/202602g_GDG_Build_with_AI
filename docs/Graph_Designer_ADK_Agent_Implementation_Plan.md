@@ -721,12 +721,8 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.4.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-]
+[tool.setuptools.packages.find]
+include = ["main_agent*", "sub_agents*"]
 ```
 
 **패키지 설치 명령어:**
