@@ -79,7 +79,7 @@ Note: _This is purely the output of the chat conversation and does not contain a
 - **"그래프 생성" 버튼** 존재
 
 ### Image 19 (에러 발생)
-- 사용자가 LG U+ 요금제 명세를 입력
+- 사용자가 통신사 요금제 명세를 입력
 - Gemini API 권한 오류 발생
 - 하지만 우측에 **"데이터 제외함"** 영역이 보임
 
