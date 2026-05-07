@@ -198,7 +198,7 @@ graph-designer-agent/
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-2.0-flash
+model: gemini-3-flash-preview
 name: graph_designer_main
 description: |
   그래프 스키마 설계 및 Kùzu DB 배포 통합 시스템.
@@ -217,7 +217,7 @@ sub_agents:
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-2.0-flash
+model: gemini-3-flash-preview
 name: schema_designer
 description: Kùzu Graph 스키마 설계 전문 Agent
 
@@ -231,7 +231,7 @@ instruction: |
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-2.0-flash
+model: gemini-3-flash-preview
 name: kuzu_deployer
 description: Kùzu Embedded Graph 배포 및 검증 전문 Agent
 
@@ -984,7 +984,7 @@ sub_agents:
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-2.0-flash
+model: gemini-3-flash-preview
 name: schema_designer
 description: |
   Kùzu Graph 스키마 설계 전문 Agent.
@@ -1162,7 +1162,7 @@ CREATE REL TABLE PlanRequiresCondition (FROM Plan TO Condition);
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/google/adk-python/refs/heads/main/src/google/adk/agents/config_schemas/AgentConfig.json
 agent_class: LlmAgent
-model: gemini-2.0-flash
+model: gemini-3-flash-preview
 name: kuzu_deployer
 description: |
   Kùzu Embedded Graph 배포 및 검증 전문 Agent.
