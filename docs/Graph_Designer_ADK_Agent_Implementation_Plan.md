@@ -1306,23 +1306,13 @@ uv sync
 cp .env.example .env
 # .env 파일 편집하여 GCP_PROJECT_ID 등 설정
 
-# GCP 인증
-gcloud auth application-default login
 ```
 
-#### 2단계: Kuzu 인프라 생성
+#### 2단계: Kuzu 인프라 (초기화 불필요)
 
 ```bash
-# Kuzu 인스턴스 및 데이터베이스 생성
-./scripts/setup_kuzu.sh
-
-# 출력 예시:
-# ========================================
-# ✅ Kuzu 인프라 설정 완료!
-# ========================================
-# 인스턴스 ID: graph-designer-instance
-# 데이터베이스 ID: telecom-graph-db
-# 예상 비용: 약 $0.90/hour ($648/month)
+# 💡 Kùzu는 임베디드 데이터베이스이므로 별도의 인스턴스 생성이나 초기화 스크립트가 필요하지 않습니다.
+# 에이전트 실행 중 첫 연결 시 로컬 폴더(kuzu_db)에 데이터베이스가 자동으로 생성됩니다.
 ```
 
 #### 3단계: Agent 로컬 실행
