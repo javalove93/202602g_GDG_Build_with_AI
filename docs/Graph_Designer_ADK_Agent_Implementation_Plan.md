@@ -106,7 +106,7 @@ graph TB
    - Kuzu 인스턴스 유지 비용 없이 로컬 스토리지 기반으로 PoC/테스트 완벽 대응
 
 4. **로컬 개발 편의성**
-   - `adk web` 실행 시 Main + Sub-Agents 모두 로드
+   - `uv run adk web` 실행 시 Main + Sub-Agents 모두 로드
    - 전체 워크플로우를 로컬에서 즉각적으로 통합 테스트
 
 #### ⚠️ 고려사항
@@ -721,18 +721,16 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
-[tool.setuptools.packages.find]
-include = ["main_agent*", "sub_agents*"]
 ```
 
 **패키지 설치 명령어:**
 
 ```bash
 # 기본 의존성 설치
-uv pip install -e .
+uv sync
 
 # 개발 의존성 포함 설치
-uv pip install -e ".[dev]"
+uv sync.[dev]"
 ```
 
 
@@ -1302,7 +1300,7 @@ cd graph-designer-agent
 # uv 환경 설정
 uv venv
 source .venv/bin/activate
-uv pip install -e .
+uv sync
 
 # 환경 변수 설정
 cp .env.example .env
@@ -1331,7 +1329,7 @@ gcloud auth application-default login
 
 ```bash
 # ADK 웹 서버 시작
-adk web
+uv run adk web
 
 # 브라우저에서 http://localhost:8080 접속
 ```
@@ -1500,7 +1498,7 @@ https://console.cloud.google.com/kuzu/instances/graph-designer-instance/database
    - 워크플로우 조율 전략
 2. **로컬 테스트**
    ```bash
-   adk web
+   uv run adk web
    ```
 
 ### 3단계: Sub-Agent 1 (Schema Designer) 구현
@@ -1522,7 +1520,7 @@ https://console.cloud.google.com/kuzu/instances/graph-designer-instance/database
 ### 5단계: 통합 테스트
 1. **로컬 통합 테스트**
    ```bash
-   adk web  # 전체 워크플로우 테스트
+   uv run adk web  # 전체 워크플로우 테스트
    ```
 2. **End-to-End 시나리오 검증**
    - 스키마 설계 → 수정 → 배포 전체 플로우
