@@ -1293,19 +1293,21 @@ ERROR: Catalog exception: Table Plan already exists.
 #### 1단계: 환경 설정
 
 ```bash
-# 프로젝트 클론 및 이동
+# 1. 저장소 클론 및 브랜치 전환
 git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
-cd graph-designer-agent
+cd 202602g_GDG_Build_with_AI
+git checkout local-kuzu
 
-# uv 환경 설정
-uv venv
-source .venv/bin/activate
+# 2. Worktree 구성 및 이동
+git worktree add -b impl ../impl origin/local-kuzu
+cd ../impl
+
+# 3. 환경 설정 및 동기화 (uv 사용)
 uv sync
 
-# 환경 변수 설정
+# 4. 환경 변수 설정
 cp .env.example .env
-# .env 파일 편집하여 GCP_PROJECT_ID 등 설정
-
+# .env 파일 편집하여 GEMINI_API_KEY 입력
 ```
 
 #### 2단계: Kuzu 인프라 (초기화 불필요)
