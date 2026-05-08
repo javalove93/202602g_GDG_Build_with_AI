@@ -386,8 +386,9 @@ response = await call_agent(
 1. DDL 문법 검증 (Kuzu Cypher 문법 확인)
 2. 배포 계획 제시 및 사용자 승인 대기
 3. DDL 실행 (`deploy_kuzu_ddl` 도구 사용)
-4. 샘플 데이터 삽입 및 검증 쿼리 실행 (`execute_kuzu_query` 도구 사용)
-5. 배포 결과 리포트 생성
+4. 스키마 배포 완료 후, 대화 컨텍스트에 있는 요금제 텍스트 정보를 바탕으로 DML(`CREATE (node)`) 쿼리를 작성하여 **반드시 실제 데이터를 삽입**합니다.
+5. 데이터 삽입 확인을 위한 검증 쿼리 실행 (`execute_kuzu_query` 도구 사용)
+6. 배포 결과 리포트 생성
 
 **안전 장치:**
 - 배포 전 반드시 "배포를 진행할까요?"라고 사용자 승인 요청
@@ -407,8 +408,8 @@ response = await call_agent(
 [3단계] 실행
   - DDL 실행 (deploy_kuzu_ddl 도구)
   ↓
-[4단계] 검증
-  - 샘플 데이터 삽입 (선택적)
+[4단계] 데이터 삽입 및 검증 (필수)
+  - 사용자가 첨부한 마크다운 문서(예: lgu_5g_plans_data.md)의 내용을 바탕으로 실제 DML(INSERT/CREATE) 쿼리를 작성하여 데이터를 삽입
   - Cypher MATCH 쿼리 실행 (execute_kuzu_query 도구)
   - 결과 리포트
 ```
@@ -438,7 +439,7 @@ def deploy_graph_schema(db_path, ddl_statements):
 4. 결과 확인 및 리포트
 ```
 
-#### 샘플 데이터 삽입 (선택)
+#### 샘플 데이터 삽입 (필수)
 
 ```cypher
 -- Agent가 생성할 Cypher 쿼리 예시
