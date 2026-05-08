@@ -19,9 +19,12 @@
 ```
 
 ## 🎨 시각화 전략
-1.  **Mermaid Rendering**: 텍스트 기반 Mermaid 코드를 생성하여 마크다운 응답에 포함합니다.
+1.  **Mermaid Rendering Service**: 텍스트 기반 Mermaid 코드를 `mermaid.ink` 서비스를 사용하여 즉시 이미지 URL로 변환하여 제공합니다. (Phase 2 구현 사항)
 2.  **스타일링**: 노드 타입별로 색상을 구분하여 가독성을 높입니다.
-    - 예: Plan(Blue), Category(Green), Benefit(Orange)
+    - Entity nodes: Light blue (#E3F2FD)
+    - Category nodes: Light green (#E8F5E9)
+    - Condition nodes: Light orange (#FFF3E0)
+3.  **이미지 생성 도구**: 필요 시 `mermaid_renderer.py` 도구를 통해 고해상도 이미지를 생성합니다.
 
 ## ⚙️ Agent 설정 (root_agent.yaml)
 
@@ -34,6 +37,9 @@ description: Kùzu DB 메타데이터 기반 시각화 전문 Agent
 
 instruction: |
   (위 System Prompt 설계 내용 포함)
+
+tools:
+  - name: sub_agents.visualizer.tools.mermaid_renderer.render_mermaid
 ```
 
 ## 💡 출력 예시 (Mermaid)

@@ -1,18 +1,22 @@
 # 05. 환경 설정 및 실행 가이드 (Env & Execution Guide)
 
 ## 🛠 Python 환경 구성 (uv 사용)
-
 ### 1. 프로젝트 초기화
 ```bash
 mkdir -p graph-designer-agent
 cd graph-designer-agent
-uv init --python 3.11
-uv venv
-source .venv/bin/activate
+
+# 💡 빌드 시스템(hatchling 등) 없이 순수 의존성 관리용으로만 초기화
+uv init --app --no-workspace
 ```
+
+> [!CAUTION]
+> **[build-system] 섹션 생성 금지**: `pyproject.toml`에 `requires = ["hatchling"]`과 같은 빌드 시스템 설정이 포함되지 않도록 주의하십시오. 만약 생성되었다면 해당 섹션을 삭제하여 순수한 의존성 관리 파일로 유지해야 합니다.
 
 ### 2. 의존성 패키지 설치
 `pyproject.toml`에 다음 의존성을 추가하고 `uv sync`를 실행합니다.
+...
+
 - `kuzu>=0.8.0`
 - `google-adk`
 - `google-genai>=0.2.0`
