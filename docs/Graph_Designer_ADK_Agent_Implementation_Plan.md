@@ -558,6 +558,39 @@ Create a professional graph database schema diagram with the following specifica
   - `sub_agents.schema_designer.tools.mermaid_renderer.render_mermaid`
 - **패키지 필수 조건**: 도구가 포함된 모든 디렉토리에 `__init__.py` 파일이 존재해야 합니다.
 
+### 📄 mermaid_renderer.py 주요 구현 예시
+```python
+import base64
+import urllib.parse
+
+def render_mermaid(mermaid_code: str) -> str:
+    """
+    Converts Mermaid.js code into an image URL using the mermaid.ink service.
+    Args:
+        mermaid_code: The raw Mermaid.js graph definition string.
+    Returns:
+        A markdown formatted image link.
+    """
+    try:
+        # Remove markdown code block backticks if present
+        clean_code = mermaid_code.strip()
+        if clean_code.startswith("```mermaid"):
+            clean_code = clean_code[10:]
+        if clean_code.endswith("```"):
+            clean_code = clean_code[:-3]
+        clean_code = clean_code.strip()
+
+        # Base64 encode the mermaid code
+        encoded_code = base64.b64encode(clean_code.encode('utf-8')).decode('utf-8')
+        
+        # Generate mermaid.ink URL
+        image_url = f"https://mermaid.ink/img/{encoded_code}"
+        
+        return f"![Graph Schema Visualization]({image_url})"
+    except Exception as e:
+        return f"Error generating Mermaid diagram: {str(e)}"
+```
+
 ```mermaid
 graph TD
     Plan[Plan<br/>id, name, price]
