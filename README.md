@@ -70,9 +70,8 @@ git worktree add -b impl ../impl origin/local-kuzu
 cd ../impl
 
 # 3. AI Agent에게 구현 지시 (Gemini CLI 예시)
-# 에이전트에게 계획서를 읽고 구현(폴더 구조, 코드 스캐폴딩, 의존성 설치 등)을 시작하도록 명령합니다.
-gemini "@docs/Graph_Designer_ADK_Agent_Implementation_Plan.md 계획 문서(plan doc) Graph_Designer_ADK_Agent_Implementation_Plan.md 기반으로 ADK multi-agent를 만들어줘. 프로젝트 내의 다른 문서들도 필요하다면 참고해. 현재 이미 uv venv 환경은 만들어져 있으니 그걸 사용하고 필요하면 새로 만들어도 됨.
-"
+# 에이전트에게 계획서를 읽고 프로젝트 루트 하위에 graph-designer-agent 폴더를 생성하여 구현을 시작하도록 명령합니다.
+gemini -y "@docs/Graph_Designer_ADK_Agent_Implementation_Plan.md 계획서 내용을 숙지하고, 반드시 프로젝트 루트에 'graph-designer-agent'라는 폴더를 먼저 생성한 후 그 안에 모든 코드와 설정을 구현해줘. uv 환경을 사용하여 필요한 의존성(pyproject.toml)도 함께 구성해줘."
 
 # 4. 환경 변수 설정
 # 에이전트 구현이 완료되면 .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY를 설정하세요.

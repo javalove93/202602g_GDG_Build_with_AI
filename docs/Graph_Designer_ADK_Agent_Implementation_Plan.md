@@ -118,31 +118,42 @@ graph TB
 1. **동시성 제어**: Kùzu는 단일 Write 연결만 허용하므로, 여러 Agent가 동시에 DDL을 실행하지 않도록 주의
 2. **장애 격리**: 한 Sub-Agent의 문제가 전체 시스템에 영향 가능
 
-### 폴더 구조
+### 폴더 구조 (Project Root 기준)
+
+> [!IMPORTANT]
+> 모든 에이전트 관련 파일은 반드시 프로젝트 루트 하위의 **`graph-designer-agent/`** 디렉토리 내에 생성되어야 합니다.
 
 ```
-graph-designer-agent/
-├── .env.example                  # 환경 변수 템플릿
-├── .adk/                         # ADK 내부 캐시 (문제 발생 시 삭제 권장)
-├── kuzu_db/                      # 로컬 Kùzu 데이터베이스 스토리지 (자동 생성)
-├── main_agent/                   # Main Agent 디렉토리
-│   ├── root_agent.yaml           # Main Agent 설정
-│   └── __init__.py               # 패키지 구성을 위한 파일
-├── sub_agents/                   # Sub-Agents 디렉토리
-│   ├── __init__.py
-│   ├── schema_designer/
-│   │   ├── root_agent.yaml       # Sub-Agent 1 설정
-│   │   ├── __init__.py
-│   │   └── tools/
-│   │       ├── __init__.py
-│   │       └── mermaid_renderer.py # 시각화 도구 (필요시)
-│   └── kuzu_deployer/
-│       ├── root_agent.yaml       # Sub-Agent 2 설정
-│       ├── __init__.py
-│       └── tools/
-│           ├── __init__.py
-│           └── kuzu_client.py      # Kùzu 조작 도구
-└── README.md
+. (Project Root)
+├── docs/
+├── examples/
+├── README.md
+└── graph-designer-agent/         # <--- 반드시 이 폴더를 생성하고 하위 구조를 만드세요
+    ├── .env.example              # 환경 변수 템플릿
+    ├── pyproject.toml            # 의존성 및 프로젝트 설정
+    ├── kuzu_db/                  # 로컬 Kùzu 데이터베이스 (자동 생성)
+    ├── main_agent/               # Main Agent 디렉토리
+    │   ├── root_agent.yaml
+    │   └── __init__.py
+    ├── sub_agents/               # Sub-Agents 디렉토리
+    │   ├── __init__.py
+    │   ├── schema_designer/
+    │   │   ├── root_agent.yaml
+    │   │   └── __init__.py
+    │   ├── kuzu_deployer/
+    │   │   ├── root_agent.yaml
+    │   │   ├── __init__.py
+    │   │   └── tools/
+    │   │       ├── __init__.py
+    │   │       └── kuzu_client.py
+    │   └── visualizer/
+    │       ├── root_agent.yaml
+    │       ├── __init__.py
+    │       └── tools/
+    │           ├── __init__.py
+    │           └── kuzu_client.py
+    └── tests/
+        └── __init__.py
 ```
 
 ### Agent 역할 분담
