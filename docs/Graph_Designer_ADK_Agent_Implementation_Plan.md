@@ -260,6 +260,7 @@ instruction: |
 tools:
   - name: sub_agents.kuzu_deployer.tools.kuzu_client.deploy_kuzu_ddl
   - name: sub_agents.kuzu_deployer.tools.kuzu_client.execute_kuzu_query
+  - name: sub_agents.kuzu_deployer.tools.kuzu_client.execute_kuzu_batch_queries
 ```
 
 > [!TIP]
@@ -386,9 +387,14 @@ response = await call_agent(
 1. DDL 문법 검증 (Kuzu Cypher 문법 확인)
 2. 배포 계획 제시 및 사용자 승인 대기
 3. DDL 실행 (`deploy_kuzu_ddl` 도구 사용)
-4. 스키마 배포 완료 후, 대화 컨텍스트에 있는 요금제 텍스트 정보를 바탕으로 DML(`CREATE (node)`) 쿼리를 작성하여 **반드시 실제 데이터를 삽입**합니다.
+4. 스키마 배포 완료 후, 대화 컨텍스트에 있는 요금제 텍스트 정보를 바탕으로 DML(`CREATE (node)`) 쿼리를 작성하여 **반드시 실제 데이터를 삽입**합니다. (단건은 `execute_kuzu_query`, 대량 삽입은 `execute_kuzu_batch_queries` 사용)
 5. 데이터 삽입 확인을 위한 검증 쿼리 실행 (`execute_kuzu_query` 도구 사용)
 6. 배포 결과 리포트 생성
+
+**데이터 삽입 절대 규칙 (CRITICAL):**
+1. **전체 데이터 삽입**: 사용자가 첨부한 문서의 요금제 데이터를 일부만 예시로 넣지 말고, 반드시 **모든 요금제와 혜택, 조건 데이터를 빠짐없이** 샘플 데이터로 변환하여 삽입해야 합니다.
+2. **단건 쿼리 반복 호출 금지**: `execute_kuzu_query`를 여러 번 반복해서 호출하지 마십시오.
+3. **일괄 삽입(Bulk Insert) 강제**: 반드시 여러 개의 CREATE 문을 세미콜론(`;`)으로 연결하여 **`execute_kuzu_batch_queries` 도구를 단 한 번만 호출**해 모든 데이터를 삽입해야 합니다.
 
 **안전 장치:**
 - 배포 전 반드시 "배포를 진행할까요?"라고 사용자 승인 요청
@@ -429,14 +435,34 @@ def deploy_graph_schema(db_path, ddl_statements):
         conn.execute(stmt)
     
     return "배포 완료"
+
+def execute_kuzu_batch_queries(queries: str) -> str:
+    """
+    Executes multiple Cypher queries (e.g., bulk CREATE statements) in a single tool call.
+    Args:
+        queries: Multiple Cypher queries separated by semicolons (';').
+    """
+    try:
+        conn = get_kuzu_connection()
+        statements = [stmt.strip() for stmt in queries.split(';') if stmt.strip()]
+
+        count = 0
+        for stmt in statements:
+            conn.execute(stmt)
+            count += 1
+
+        return f"Successfully executed {count} queries in batch."
+    except Exception as e:
+        return f"Error executing batch queries: {str(e)}"
 ```
 
 **Agent가 실행할 명령어:**
 ```markdown
 1. DDL 수신
 2. 배포 도구 실행 (deploy_kuzu_ddl)
-3. 검증 쿼리 실행 (execute_kuzu_query)
-4. 결과 확인 및 리포트
+3. 대량 데이터 삽입 시 배치 도구 실행 (execute_kuzu_batch_queries)
+4. 검증 쿼리 실행 (execute_kuzu_query)
+5. 결과 확인 및 리포트
 ```
 
 #### 샘플 데이터 삽입 (필수)
