@@ -39,9 +39,9 @@ instruction: |
   (위 System Prompt 설계 내용 포함)
 
 sub_agents:
-  - config_path: ../sub_agents/schema_designer/root_agent.yaml
-  - config_path: ../sub_agents/kuzu_deployer/root_agent.yaml
-  - config_path: ../sub_agents/visualizer/root_agent.yaml
+  - config_path: ../schema_designer/root_agent.yaml
+  - config_path: ../kuzu_deployer/root_agent.yaml
+  - config_path: ../visualizer/root_agent.yaml
 ```
 
 ## 🔄 워크플로우 예시

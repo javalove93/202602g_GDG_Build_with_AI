@@ -59,7 +59,7 @@ graph TB
 ### 폴더 구조 (Project Root 기준)
 
 > [!IMPORTANT]
-> 모든 에이전트 관련 파일은 프로젝트 루트 하위의 **`graph-designer-agent/`** 디렉토리 내에 생성되어야 합니다.
+> 모든 에이전트 관련 파일은 반드시 프로젝트 루트 하위의 **`graph-designer-agent/`** 디렉토리 내에 생성되어야 합니다.
 
 ```
 graph-designer-agent/
@@ -67,5 +67,8 @@ graph-designer-agent/
 ├── pyproject.toml
 ├── kuzu_db/                  # 자동 생성됨
 ├── main_agent/               # Main Agent (Orchestrator)
-└── sub_agents/               # Sub-Agents (Schema, Deployer, Visualizer)
+├── schema_designer/          # Sub-Agent 1
+├── kuzu_deployer/            # Sub-Agent 2
+└── visualizer/               # Sub-Agent 3
 ```
+
