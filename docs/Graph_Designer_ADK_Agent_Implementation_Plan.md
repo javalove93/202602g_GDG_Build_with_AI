@@ -1442,7 +1442,6 @@ uv run adk web
 - 예상 소요 시간: 약 30초
 
 ### 영향 범위
-- 대상 인스턴스: `graph-designer-instance`
 - 대상 데이터베이스: `telecom-graph-db`
 - ⚠️ 기존 동일 이름 테이블이 있으면 에러 발생
 
@@ -1460,8 +1459,6 @@ yes
 ## ✅ Kuzu 배포 완료 리포트
 
 ### 배포 정보
-- **프로젝트**: my-gcp-project
-- **인스턴스**: graph-designer-instance
 - **데이터베이스**: telecom-graph-db
 - **배포 시간**: 2026-02-04 23:45:00 KST
 
@@ -1487,8 +1484,6 @@ RETURN p.name, c.category_name;
 | 5G 프리미어 에센셜 | 5G 프리미어 |
 | 5G 프리미어 | 5G 프리미어 |
 
-### Kuzu 콘솔 링크
-https://console.cloud.google.com/kuzu/instances/graph-designer-instance/databases/telecom-graph-db?project=my-gcp-project
 ```
 
 
