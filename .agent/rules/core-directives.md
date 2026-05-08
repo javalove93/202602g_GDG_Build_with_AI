@@ -1,0 +1,18 @@
+# 필수 핵심 행동 강령 (CRITICAL CORE DIRECTIVES)
+
+**에이전트는 어떠한 상황에서도 아래 규칙을 절대 위반해서는 안 됩니다. 이 규칙은 다른 모든 로컬 규칙 및 상황적 판단에 최우선합니다.**
+
+1. **[No Silent Mutations]** 파일 쓰기/수정(`replace`, `write_file`), 쉘 명령어 실행(`run_shell_command`) 등 **시스템 상태를 변경하는 모든 도구 호출 직전에는 반드시 한국어로 목적과 이유를 먼저 설명해야 합니다.**
+2. **[No Wait After Explain]** 설명을 마쳤다면 사용자의 대답을 기다리지 말고 **곧바로 도구를 호출**하여 CLI의 보안 팝업(`Apply this change?`)이 뜨도록 유도하십시오.
+3. **[No Guessing]** 모호한 요구사항이나 불확실한 에러 원인은 임의로 추측하여 수정하지 말고, **반드시 사용자에게 먼저 질문(#QQ)하여 확인**받으십시오.
+4. **[No Runtime Management]** 서버 재시작, 프로세스 종료(`kill`) 등 **런타임 제어 명령어는 어떠한 경우에도 에이전트가 직접 실행하지 마십시오.** 변경 사항 적용을 위한 재시작 등은 전적으로 사용자가 수동으로 진행하므로, 에이전트는 "재시작이 필요함"을 텍스트로 안내만 해야 합니다.
+5. **[Graph-Based Analysis]** 소스 코드 분석 시 가급적 **`mcp_code-review-graph` 도구**를 사용하십시오. **단, 해당 도구가 설치되어 있지 않거나 사용할 수 없는 환경이라면 이 단계를 건너뛰고 표준 검색 도구(`grep_search`, `glob` 등)를 사용하여 분석을 진행하십시오.**
+   - **[MCP Graph Root]** `mcp_code-review-graph` 사용 시 `repo_root`는 반드시 `/opt/jerrydisk/git/202605s-Samsung-GE-Workshop/202602g_GDG_Build_with_AI`로 설정하십시오.
+6. **[No Over-engineering & No Jumping Ahead] (절대 오버하지 말 것)**
+    사용자가 명시적으로 지시한 작업의 범위를 넘어 **임의로 앞서 나가거나(Jumping ahead) 묻지 않은 과도한 리팩토링(Over-engineering)을 진행하지 마십시오.** 
+    버그 수정은 해당 버그만 타겟팅하며, 기능 추가는 요청된 기능만 최소한으로 구현합니다. 부가적인 개선 아이디어가 있다면 코드를 수정하기 전에 **반드시 제안만 하고 사용자의 승인을 대기**해야 합니다.
+7. **[Troubleshooting Protocol (#TR)] (트러블슈팅 및 버그 수정 강령)**
+    모든 디버깅 및 버그 수정(#TR) 작업 시에는 다음의 상향식(Bottom-up) 원칙을 예외 없이 준수하십시오:
+    - **Bottom-up 접근**: 거시적 아키텍처(Top-down)부터 의심하지 마십시오. 가장 작은 단위의 데이터 입력, 설정 파일, 로그 등 **가장 기초적인 부분부터 검증**을 시작해야 합니다.
+    - **증거 기반(Evidence-First)**: 코드를 수정하기 전, 콘솔 디버그 로그나 터미널 OS 명령어를 통해 버그의 진원지를 팩트로 먼저 입증해야 합니다.
+8. **[Atomic Workflow & Self-Verification]** 복잡한 작업은 단계를 쪼개어 진행하며, 수정 후 반드시 해당 변경 사항이 의도대로 작동하는지 스스로 검증(Self-verification)하십시오.

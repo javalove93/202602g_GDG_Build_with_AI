@@ -62,11 +62,11 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 # 1. 저장소 클론 및 브랜치 전환
 git clone https://github.com/javalove93/202602g_GDG_Build_with_AI
 cd 202602g_GDG_Build_with_AI
-git checkout local-kuzu
+git checkout local-kuzu-with-rules
 
 # 2. Worktree 구성
 # ⚠️ 권장: git worktree를 사용하여 개발 전용 독립 환경(impl)을 구성하세요
-git worktree add -b impl ../impl origin/local-kuzu
+git worktree add -b impl ../impl origin/local-kuzu-with-rules
 cd ../impl
 
 # 3. AI Agent에게 구현 지시 (Gemini CLI 예시)
