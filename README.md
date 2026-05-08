@@ -104,6 +104,19 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 
 ---
 
+### 🔍 지식 그래프(KG) 활용 질의 예시 (Chatbot Use Cases)
+
+에이전트가 구축한 지식 그래프는 단순 검색(Vector RAG)으로는 답변하기 어려운 **관계 중심의 복합 질문**에 대해 정확한 데이터를 추출할 수 있는 기반이 됩니다.
+
+| 질문 유형 | 자연어 질문 (상담 챗봇 환경) | Cypher 쿼리 (내부 작동 원리) |
+| :--- | :--- | :--- |
+| **복합 조건 검색** | "월 8만원 이하 요금제 중 OTT 혜택이 있는 건 뭐야?" | `MATCH (p:Plan)-[:PROVIDES]->(b:Benefit) WHERE p.monthly_fee <= 80000 AND b.benefit_type = 'OTT' RETURN p.name, b.description` |
+| **가입 자격 필터링** | "20대 청년들만 가입할 수 있는 요금제들만 골라줘." | `MATCH (p:Plan)-[:REQUIRES]->(c:Condition) WHERE c.description CONTAINS '청년' OR c.description CONTAINS '20대' RETURN p.name` |
+| **개인화 추천** | "넷플릭스가 포함된 요금제 중에서 가장 저렴한 건?" | `MATCH (p:Plan)-[:PROVIDES]->(b:Benefit) WHERE b.description CONTAINS '넷플릭스' RETURN p.name, p.monthly_fee ORDER BY p.monthly_fee ASC LIMIT 1` |
+| **상세 비교** | "무제한 요금제 카테고리에 속한 것들의 공유 데이터 한도를 알려줘." | `MATCH (p:Plan)-[:BELONGS_TO]->(c:PlanCategory) WHERE c.category_name CONTAINS '무제한' RETURN p.name, p.sharing_data` |
+
+---
+
 ## 📚 문서 간 관계
 
 ### 핵심 문서 (필수)
