@@ -129,6 +129,7 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 | **심화: 다중 홉(Multi-hop)** | "내가 20대 청년인데, 넷플릭스를 볼 수 있고 데이터가 무제한인 가장 저렴한 요금제는 뭐야?" | `MATCH (c:Condition)<-[:REQUIRES]-(p:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Age' AND c.value = '20대'`<br>`AND b.description CONTAINS '넷플릭스' AND p.data_limit = -1`<br>`RETURN p.name, p.price ORDER BY p.price ASC LIMIT 1` |
 | **심화: Upsell 추천** | "현재 '5G 스탠다드'를 쓰는데, 2만원만 더 내면 OTT가 추가되는 상위 요금제는?" | `MATCH (curr:Plan {name: '5G 스탠다드'}), (up:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE up.price > curr.price AND up.price <= curr.price + 20000 AND b.benefit_type = 'OTT'`<br>`RETURN up.name, up.price - curr.price AS cost_diff, b.description` |
 | **고급: 교집합 패턴** | "가족 결합 할인이 되면서 스마트기기 2회선이 무료인 요금제들을 카테고리별로 묶어줘." | `MATCH (cat:PlanCategory)<-[:BELONGS_TO]-(p:Plan)`<br>`MATCH (p)-[:REQUIRES]->(c:Condition), (p)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Family' AND b.description CONTAINS '스마트기기 2회선'`<br>`RETURN cat.category_name, collect(p.name) AS eligible_plans` |
+| **최고급: 3사 통합 비교 (Cross-Carrier)**<br>*(통합 KG의 진가)* | "통신 3사 통틀어서, 데이터 무제한이면서 넷플릭스 혜택을 주는 요금제를 통신사별로 묶어서 보여줘." | `MATCH (c:Carrier)<-[:BELONGS_TO_CARRIER]-(p:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE p.data_limit = -1 AND b.description CONTAINS '넷플릭스'`<br>`RETURN c.name AS carrier, collect(p.name) AS plans` |
 
 ---
 
