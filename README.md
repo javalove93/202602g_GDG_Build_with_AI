@@ -96,7 +96,7 @@ cp .env.example .env
 
 # 5. ADK Agent 실행
 # 환경 변수 설정 후 에이전트 웹 UI를 시작합니다.
-uv run adk web graph-designer-agent/main_agent/root_agent.yaml
+uv run adk web graph-designer-agent
 ```
 
 ### 💡 ADK Web 실행 후 테스트 방법 (프롬프트 예시)
