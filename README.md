@@ -84,8 +84,10 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 
 ### 💡 ADK Web 실행 후 테스트 방법 (프롬프트 예시)
 
-에이전트 구현이 완료되고 `adk web` 화면이 열리면, 하단의 **클립(첨부) 아이콘 📎**을 클릭하여 `examples/` 폴더에 있는 데이터 파일(`lgu_5g_plans_data.md` 등) 중 하나를 업로드합니다.
-그 후 아래 프롬프트를 복사하여 채팅창에 붙여넣으세요.
+에이전트 구현이 완료되고 `adk web` 화면이 열리면, 하단의 **클립(첨부) 아이콘 📎**을 클릭하여 `examples/` 폴더에 있는 데이터 파일을 업로드합니다.
+
+#### [기본] 단일 통신사 분석
+원하는 통신사 파일 1개를 업로드하고 아래 프롬프트를 입력하세요.
 
 ```text
 첨부한 통신사 요금제 정보를 바탕으로 상담 챗봇을 위한 그래프 DB 스키마를 설계해줘.
@@ -100,6 +102,18 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 - 요금제는 카테고리에 속함
 - 요금제는 여러 혜택을 포함
 - 요금제는 가입 조건을 요구
+```
+
+#### [심화] 통신 3사 통합 비교 분석 (Multi-Carrier)
+`lgu_5g_plans_data.md`, `skt_plans_data.md`, `kt_plans_data.md` 3개의 파일을 **모두 한 번에 첨부**하고 아래 프롬프트를 입력하세요.
+
+```text
+첨부한 통신 3사(SKT, KT, LGU+)의 요금제 정보들을 하나의 단일 지식 그래프(Knowledge Graph)로 통합하여 비교할 수 있도록 설계해줘. 
+
+추가 요구사항:
+- 반드시 `Carrier(통신사)`라는 최상위 엔티티 노드를 생성할 것.
+- 각 통신사의 요금제(Plan) 노드들이 해당 Carrier 노드에 `BELONGS_TO_CARRIER` 관계로 연결되도록 설계할 것.
+- 서로 다른 통신사라도 혜택(예: 넷플릭스)이나 조건(예: 20대 청년)이 같다면, 동일한 Benefit/Condition 노드를 공유하여 크로스 비교가 가능하도록 할 것.
 ```
 
 ---
