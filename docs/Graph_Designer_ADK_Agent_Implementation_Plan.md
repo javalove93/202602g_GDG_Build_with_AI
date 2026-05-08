@@ -1316,17 +1316,13 @@ LIMIT 10;
 ERROR: Catalog exception: Table Plan already exists.
 ```
 → **해결책**: `DROP TABLE Plan;` 등 쿼리로 삭제 후 재생성 확인 (단 삭제 시 사용자 동의 필수)
+
+2. **Database path cannot be a directory**
 ```
-        columns=["id", "name", "price"],
-        values=[
-            ["plan-001", "5G 시그니처", 130000],
-            ["plan-002", "5G 프리미어", 95000],
-        ]
-    )
-    
-    # 쿼리 실행
-    results = client.execute_query("SELECT * FROM Plan")
-    print(results)
+Runtime exception: Database path cannot be a directory: ./kuzu_db
+```
+→ **해결책**: `mkdir kuzu_db` 등 운영체제 명령어로 빈 디렉토리를 사전에 직접 생성하지 마세요. 에이전트 내 Python 코드에서 `os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)`처럼 부모 경로만 확보하고, 최종 `kuzu_db` 디렉토리는 Kùzu 엔진이 스스로 생성하고 초기화하도록 맡겨야 합니다. 또한, 경로의 혼선을 막기 위해 코드 상에서 `os.path.abspath`를 사용하는 것을 권장합니다.
+```
 ```
 
 ---
