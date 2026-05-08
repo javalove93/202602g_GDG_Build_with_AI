@@ -54,7 +54,9 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
    - 4가지 입력 방법 및 검증 포인트 안내
    - 실제 테스트 시에는 동봉된 통신 3사 데이터(`lgu_5g_plans_data.md`, `skt_plans_data.md`, `kt_plans_data.md`) 중 하나를 첨부하여 진행하세요.
 
-### 2️⃣ 구현 및 실행 가이드
+### 2️⃣ 구현 및 실행 가이드 (AI Agent 기반 자동 개발)
+
+이 프로젝트는 개발자가 직접 코딩하는 대신, **Gemini CLI, Antigravity, Gemini Code Assist 등의 AI 에이전트가 `docs/Graph_Designer_ADK_Agent_Implementation_Plan.md`를 읽고 스스로 구현하도록 지시하는 것**이 핵심입니다.
 
 ```bash
 # 1. 저장소 클론 및 브랜치 전환
@@ -64,7 +66,7 @@ git checkout local-kuzu
 
 # 2. Worktree 구성
 # ⚠️ 권장: git worktree를 사용하여 개발 전용 독립 환경(impl)을 구성하세요
-git worktree add -b impl ../impl local-kuzu
+git worktree add -b impl ../impl origin/local-kuzu
 cd ../impl
 
 # 3. 환경 설정 및 동기화 (uv 사용)
@@ -72,16 +74,15 @@ cd ../impl
 uv sync
 
 # 4. 환경 변수 설정
-# .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY 등을 설정하세요.
+# .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY를 설정하세요.
 cp .env.example .env
 
-# 5. ADK Agent 실행
-# 에이전트 웹 UI가 시작됩니다. 브라우저에서 http://localhost:8080 으로 접속하세요.
-uv run adk web graph-designer-agent/main_agent/root_agent.yaml
+# 5. AI Agent에게 구현 지시 (Gemini CLI 예시)
+# 에이전트에게 계획서를 읽고 구현을 시작하도록 명령합니다.
+gemini "docs/Graph_Designer_ADK_Agent_Implementation_Plan.md 파일의 '다음 단계'를 참조하여 graph-designer-agent 폴더 구조와 초기 코드 스캐폴딩을 시작해줘"
 
-# 6. Kùzu 로컬 DB 확인 (작업 후)
-# 에이전트가 배포를 완료하면 graph-designer-agent/kuzu_db 폴더가 생성됩니다.
-ls -la graph-designer-agent/kuzu_db
+# 6. ADK Agent 실행 (구현 완료 후)
+uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 ```
 
 ---
