@@ -24,10 +24,12 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 ├── README.md                                    # 이 파일
 ├── docs/
 │   ├── Graph_Designer_ADK_Agent_Implementation_Plan.md  # ⭐ 핵심 구현 계획서 (Kùzu 버전)
-│   ├── Build_with_AI_Vibe_prototyping.md       # 참고: Vibe Prototyping 개념
-│   └── Build with AI - Vibe prototyping using GraphDB.pdf  # 원본 발표 자료
+│   └── Build_with_AI_Vibe_prototyping.md       # 참고: Vibe Prototyping 개념
 └── examples/
-    └── 입력_예시.md                              # ⭐ Agent 테스트용 통신사 요금제 예시
+    ├── 테스트_시나리오_가이드.md                 # Agent 테스트 가이드 및 방법론
+    ├── lgu_5g_plans_data.md                      # LGU+ 요금제 원시 데이터
+    ├── skt_plans_data.md                         # SKT 요금제 원시 데이터
+    └── kt_plans_data.md                          # KT 요금제 원시 데이터
 ```
 
 ---
@@ -47,10 +49,10 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
      - Python Kùzu 래퍼 코드
      - End-to-End 실행 가이드
 
-2. **[examples/lgu_5g_plans_data.md](examples/lgu_5g_plans_data.md)** ⭐
-   - **Agent 테스트용 입력 데이터**
-   - 통신사 5G 요금제 실제 정보 포함
-   - 4가지 입력 방법 예시
+2. **[examples/테스트_시나리오_가이드.md](examples/테스트_시나리오_가이드.md)** ⭐
+   - **Agent 테스트 가이드**
+   - 4가지 입력 방법 및 검증 포인트 안내
+   - 실제 테스트 시에는 동봉된 통신 3사 데이터(`lgu_5g_plans_data.md`, `skt_plans_data.md`, `kt_plans_data.md`) 중 하나를 첨부하여 진행하세요.
 
 ### 2️⃣ 구현 및 실행 가이드
 
