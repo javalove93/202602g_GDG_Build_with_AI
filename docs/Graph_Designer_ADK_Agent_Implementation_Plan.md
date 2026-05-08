@@ -131,7 +131,7 @@ graph TB
 └── graph-designer-agent/         # <--- 반드시 이 폴더를 생성하고 하위 구조를 만드세요
     ├── .env.example              # 환경 변수 템플릿
     ├── pyproject.toml            # 의존성 및 프로젝트 설정
-    ├── kuzu_db/                  # 로컬 Kùzu 데이터베이스 (자동 생성)
+    ├── kuzu_db/                  # 로컬 Kùzu 데이터베이스 (수동 생성 금지! 런타임에 자동 생성됨)
     ├── main_agent/               # Main Agent 디렉토리
     │   ├── root_agent.yaml
     │   └── __init__.py
