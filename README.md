@@ -110,10 +110,11 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 
 | 질문 유형 | 자연어 질문 (상담 챗봇 환경) | Cypher 쿼리 (내부 작동 원리) |
 | :--- | :--- | :--- |
-| **다중 홉(Multi-hop) 추론**<br>*(RDBMS의 3중 JOIN 대체)* | "내가 20대 청년인데, 넷플릭스를 볼 수 있고 데이터가 무제한인 가장 저렴한 요금제는 뭐야?" | `MATCH (c:Condition)<-[:REQUIRES]-(p:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Age' AND c.value = '20대'`<br>`AND b.description CONTAINS '넷플릭스'`<br>`AND p.data_limit = -1`<br>`RETURN p.name, p.price ORDER BY p.price ASC LIMIT 1` |
-| **상향 가입(Upsell) 추천**<br>*(그래프 노드 간 비교)* | "현재 '5G 스탠다드'를 쓰는데, 2만원만 더 내면 OTT가 추가되는 상위 요금제들을 비교해줘." | `MATCH (curr:Plan {name: '5G 스탠다드'}), (up:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE up.price > curr.price AND up.price <= curr.price + 20000`<br>`AND b.benefit_type = 'OTT'`<br>`RETURN up.name, up.price - curr.price AS cost_diff, b.description` |
-| **교집합 분석 (Graph Pattern)**<br>*(다중 관계 동시 충족)* | "가족 결합 할인이 되면서 스마트기기 2회선이 무료인 요금제들을 카테고리별로 묶어줘." | `MATCH (cat:PlanCategory)<-[:BELONGS_TO]-(p:Plan)`<br>`MATCH (p)-[:REQUIRES]->(c:Condition), (p)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Family' AND b.description CONTAINS '스마트기기 2회선'`<br>`RETURN cat.category_name, collect(p.name) AS eligible_plans` |
-| **최단 경로(Shortest Path)**<br>*(KG 특화 알고리즘)* | "청년 혜택 조건(Condition)에서 VIP 멤버십 혜택(Benefit)까지 연결되는 요금제 경로는?" | `MATCH path = shortestPath((c:Condition)-[*..3]-(b:Benefit))`<br>`WHERE c.condition_type = 'Age' AND b.benefit_type = 'Membership'`<br>`RETURN path` |
+| **기초: 복합 필터링** | "월 8만원 이하 요금제 중 OTT 혜택이 있는 건 뭐야?" | `MATCH (p:Plan)-[:PROVIDES]->(b:Benefit) WHERE p.monthly_fee <= 80000 AND b.benefit_type = 'OTT' RETURN p.name, b.description` |
+| **기초: 자격 확인** | "20대 청년들만 가입할 수 있는 요금제들만 골라줘." | `MATCH (p:Plan)-[:REQUIRES]->(c:Condition) WHERE c.description CONTAINS '청년' OR c.description CONTAINS '20대' RETURN p.name` |
+| **심화: 다중 홉(Multi-hop)** | "내가 20대 청년인데, 넷플릭스를 볼 수 있고 데이터가 무제한인 가장 저렴한 요금제는 뭐야?" | `MATCH (c:Condition)<-[:REQUIRES]-(p:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Age' AND c.value = '20대'`<br>`AND b.description CONTAINS '넷플릭스' AND p.data_limit = -1`<br>`RETURN p.name, p.price ORDER BY p.price ASC LIMIT 1` |
+| **심화: Upsell 추천** | "현재 '5G 스탠다드'를 쓰는데, 2만원만 더 내면 OTT가 추가되는 상위 요금제는?" | `MATCH (curr:Plan {name: '5G 스탠다드'}), (up:Plan)-[:INCLUDES]->(b:Benefit)`<br>`WHERE up.price > curr.price AND up.price <= curr.price + 20000 AND b.benefit_type = 'OTT'`<br>`RETURN up.name, up.price - curr.price AS cost_diff, b.description` |
+| **고급: 교집합 패턴** | "가족 결합 할인이 되면서 스마트기기 2회선이 무료인 요금제들을 카테고리별로 묶어줘." | `MATCH (cat:PlanCategory)<-[:BELONGS_TO]-(p:Plan)`<br>`MATCH (p)-[:REQUIRES]->(c:Condition), (p)-[:INCLUDES]->(b:Benefit)`<br>`WHERE c.condition_type = 'Family' AND b.description CONTAINS '스마트기기 2회선'`<br>`RETURN cat.category_name, collect(p.name) AS eligible_plans` |
 
 ---
 
