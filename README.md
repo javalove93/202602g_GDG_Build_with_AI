@@ -69,19 +69,16 @@ git checkout local-kuzu
 git worktree add -b impl ../impl origin/local-kuzu
 cd ../impl
 
-# 3. 환경 설정 및 동기화 (uv 사용)
-# 의존성 설치 및 가상환경(.venv)이 자동으로 구성됩니다.
-uv sync
-
-# 4. 환경 변수 설정
-# .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY를 설정하세요.
-cp .env.example .env
-
-# 5. AI Agent에게 구현 지시 (Gemini CLI 예시)
-# 에이전트에게 계획서를 읽고 구현을 시작하도록 명령합니다.
+# 3. AI Agent에게 구현 지시 (Gemini CLI 예시)
+# 에이전트에게 계획서를 읽고 구현(폴더 구조, 코드 스캐폴딩, 의존성 설치 등)을 시작하도록 명령합니다.
 gemini "docs/Graph_Designer_ADK_Agent_Implementation_Plan.md 파일의 '다음 단계'를 참조하여 graph-designer-agent 폴더 구조와 초기 코드 스캐폴딩을 시작해줘"
 
-# 6. ADK Agent 실행 (구현 완료 후)
+# 4. 환경 변수 설정
+# 에이전트 구현이 완료되면 .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY를 설정하세요.
+cp .env.example .env
+
+# 5. ADK Agent 실행
+# 환경 변수 설정 후 에이전트 웹 UI를 시작합니다.
 uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 ```
 
