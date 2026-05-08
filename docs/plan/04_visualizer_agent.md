@@ -24,7 +24,40 @@
     - Entity nodes: Light blue (#E3F2FD)
     - Category nodes: Light green (#E8F5E9)
     - Condition nodes: Light orange (#FFF3E0)
-3.  **이미지 생성 도구**: 필요 시 `mermaid_renderer.py` 도구를 통해 고해상도 이미지를 생성합니다.
+3.  **이미지 생성 도구**: 필요 시 `mermaid_renderer.py` 도구를 통해 마크다운 텍스트를 이미지 파일로 저장하거나 URL로 변환합니다.
+
+### 📄 mermaid_renderer.py 주요 구현 예시
+```python
+import base64
+import urllib.parse
+
+def render_mermaid(mermaid_code: str) -> str:
+    """
+    Converts Mermaid.js code into an image URL using the mermaid.ink service.
+    Args:
+        mermaid_code: The raw Mermaid.js graph definition string.
+    Returns:
+        A markdown formatted image link.
+    """
+    try:
+        # Remove markdown code block backticks if present
+        clean_code = mermaid_code.strip()
+        if clean_code.startswith("```mermaid"):
+            clean_code = clean_code[10:]
+        if clean_code.endswith("```"):
+            clean_code = clean_code[:-3]
+        clean_code = clean_code.strip()
+
+        # Base64 encode the mermaid code
+        encoded_code = base64.b64encode(clean_code.encode('utf-8')).decode('utf-8')
+        
+        # Generate mermaid.ink URL
+        image_url = f"https://mermaid.ink/img/{encoded_code}"
+        
+        return f"![Graph Schema Visualization]({image_url})"
+    except Exception as e:
+        return f"Error generating Mermaid diagram: {str(e)}"
+```
 
 ## ⚙️ Agent 설정 (root_agent.yaml)
 
