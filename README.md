@@ -21,15 +21,33 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 
 ```
 202602g_GDG_Build_with_AI/
-├── README.md                                    # 이 파일
-├── docs/
-│   ├── Graph_Designer_ADK_Agent_Implementation_Plan.md  # ⭐ 핵심 구현 계획서 (Kùzu 버전)
-│   └── Build_with_AI_Vibe_prototyping.md       # 참고: Vibe Prototyping 개념
-└── examples/
-    ├── 테스트_시나리오_가이드.md                 # Agent 테스트 가이드 및 방법론
-    ├── lgu_5g_plans_data.md                      # LGU+ 요금제 원시 데이터
-    ├── skt_plans_data.md                         # SKT 요금제 원시 데이터
-    └── kt_plans_data.md                          # KT 요금제 원시 데이터
+├── README.md                                    # 프로젝트 개요 및 가이드
+├── context.md                                   # 프로젝트 전반의 컨텍스트 정보
+├── .agent/                                      # Agent 관련 규칙 및 지침
+│   └── rules/
+│       ├── core-directives.md                   # 핵심 지시사항
+│       └── rules.md                             # 상세 작업 규칙
+├── conductor/                                   # 프로젝트 오케스트레이션 및 관리
+│   └── plan_docs_and_rules.md                   # 전체적인 실행 계획 및 규칙
+├── docs/                                        # 상세 문서 및 설계 자료
+│   ├── Build_with_AI_Vibe_prototyping.md       # Vibe Prototyping 개념 및 배경
+│   ├── Graph Designer ADK Agent - Antigravity Chat.md # Agent 대화 기록 및 히스토리
+│   ├── plan/                                    # 단계별 상세 구현 계획
+│   │   ├── 00_overview_and_architecture.md      # 아키텍처 개요 및 핵심 구현 계획 ⭐
+│   │   ├── 01_main_agent_orchestrator.md        # 메인 에이전트 설계
+│   │   ├── 02_schema_designer_agent.md          # 스키마 설계 에이전트
+│   │   ├── 03_kuzu_deployer_agent.md            # Kùzu 배포 에이전트
+│   │   ├── 04_visualizer_agent.md               # 시각화 에이전트
+│   │   └── 05_environment_and_execution.md      # 환경 구성 및 실행 방법
+│   ├── impl/                                    # 구현 세부 정보
+│   │   └── impl_context.md                      # 구현 컨텍스트 및 히스토리
+│   └── tr/                                      # 문제 해결 가이드
+│       └── troubleshooting.md                   # 트러블슈팅 문서
+└── examples/                                    # 테스트 데이터 및 가이드
+    ├── 테스트_시나리오_가이드.md                 # Agent 테스트 시나리오 및 방법
+    ├── kt_plans_data.md                         # KT 요금제 예시 데이터
+    ├── lgu_5g_plans_data.md                     # LGU+ 요금제 예시 데이터
+    └── skt_plans_data.md                        # SKT 요금제 예시 데이터
 ```
 
 ---
@@ -40,14 +58,13 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 
 **반드시 이 순서대로 읽으세요:**
 
-1. **[docs/Graph_Designer_ADK_Agent_Implementation_Plan.md](docs/Graph_Designer_ADK_Agent_Implementation_Plan.md)** ⭐
-   - **전체 구현 계획서 (Kùzu 기반)**
-   - 이 문서 하나로 Agent 전체를 파악할 수 있습니다
+1. **[docs/plan/00_overview_and_architecture.md](docs/plan/00_overview_and_architecture.md)** ⭐
+   - **전체 구현 계획 및 아키텍처 가이드**
+   - 이 문서를 시작으로 `docs/plan/` 폴더 내의 상세 계획들을 파악할 수 있습니다.
    - 포함 내용:
-     - 환경 설정 (uv)
-     - Agent 설정 파일 (agent.yaml, 프롬프트)
-     - Python Kùzu 래퍼 코드
-     - End-to-End 실행 가이드
+     - Multi-Agent 아키텍처 (Main + Sub-Agents)
+     - 환경 설정 및 구현 제약사항
+     - 단계별 상세 구현 로드맵 가이드
 
 2. **[examples/테스트_시나리오_가이드.md](examples/테스트_시나리오_가이드.md)** ⭐
    - **Agent 테스트 가이드**
@@ -56,7 +73,7 @@ Google ADK를 사용하여 비즈니스 요구사항으로부터 Kùzu Graph 스
 
 ### 2️⃣ 구현 및 실행 가이드 (AI Agent 기반 자동 개발)
 
-이 프로젝트는 개발자가 직접 코딩하는 대신, **Gemini CLI, Antigravity, Gemini Code Assist 등의 AI 에이전트가 `docs/Graph_Designer_ADK_Agent_Implementation_Plan.md`를 읽고 스스로 구현하도록 지시하는 것**이 핵심입니다.
+이 프로젝트는 개발자가 직접 코딩하는 대신, **Gemini CLI, Antigravity, Gemini Code Assist 등의 AI 에이전트가 `docs/plan/` 폴더 내의 계획서들을 읽고 스스로 구현하도록 지시하는 것**이 핵심입니다.
 
 ```bash
 # 1. 저장소 클론 및 브랜치 전환
@@ -71,7 +88,7 @@ cd ../impl
 
 # 3. AI Agent에게 구현 지시 (Gemini CLI 예시)
 # 에이전트에게 계획서를 읽고 프로젝트 루트 하위에 graph-designer-agent 폴더를 생성하여 구현을 시작하도록 명령합니다.
-gemini -y "@docs/Graph_Designer_ADK_Agent_Implementation_Plan.md 계획서 내용을 숙지하고, 반드시 프로젝트 루트에 'graph-designer-agent'라는 폴더를 먼저 생성한 후 그 안에 모든 코드와 설정을 구현해줘. uv 환경을 사용하여 필요한 의존성(pyproject.toml)도 함께 구성해줘."
+gemini -y "@docs/plan/00_overview_and_architecture.md 및 docs/plan/ 폴더의 계획서들을 숙지하고, 반드시 프로젝트 루트에 'graph-designer-agent'라는 폴더를 먼저 생성한 후 그 안에 모든 코드와 설정을 구현해줘. uv 환경을 사용하여 필요한 의존성(pyproject.toml)도 함께 구성해줘."
 
 # 4. 환경 변수 설정
 # 에이전트 구현이 완료되면 .env.example을 복사하여 .env를 생성하고 GEMINI_API_KEY를 설정하세요.
@@ -139,17 +156,18 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 
 | 문서 | 역할 | 사용 시점 |
 |------|------|----------|
-| **Graph_Designer_ADK_Agent_Implementation_Plan.md** | 전체 구현 가이드 | 구현 아키텍처 파악 시 |
-| **입력_예시.md** | 테스트 데이터 | Agent 실행 후 프롬프트 테스트 |
-| **impl_context.md** | 구현 상태 기록 | 프로젝트 히스토리 파악 시 |
-| **troubleshooting.md** | 트러블슈팅 가이드 | 에러 발생 시 |
+| **docs/plan/00_overview_and_architecture.md** | 전체 구현 가이드 시작점 | 구현 아키텍처 파악 시 |
+| **docs/plan/** | 단계별 상세 구현 계획 폴더 | 각 에이전트 상세 구현 시 |
+| **examples/테스트_시나리오_가이드.md** | 테스트 데이터 및 시나리오 | Agent 실행 후 프롬프트 테스트 |
+| **docs/impl/impl_context.md** | 구현 상태 기록 | 프로젝트 히스토리 파악 시 |
+| **docs/tr/troubleshooting.md** | 트러블슈팅 가이드 | 에러 발생 시 |
 
 ### 참고 문서 (선택)
 
 | 문서 | 역할 | 사용 시점 |
 |------|------|----------|
-| Build_with_AI_Vibe_prototyping.md | Vibe Prototyping 개념 설명 | 배경 이해 필요 시 |
-| Build with AI - Vibe prototyping using GraphDB.pdf | 원본 발표 자료 | 상세 배경 이해 필요 시 |
+| docs/Build_with_AI_Vibe_prototyping.md | Vibe Prototyping 개념 설명 | 배경 이해 필요 시 |
+| docs/Build with AI - Vibe prototyping using GraphDB 14.jpg | 이미지 자료 | 시각적 참고 필요 시 |
 
 ---
 
@@ -160,9 +178,8 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 ### 필수 구성 요소
 
 - [x] **환경 설정 가이드**: uv, Python 3.11, 의존성 패키지(kuzu)
-- [x] **Agent 설정 파일**: root_agent.yaml (Main + Sub-Agents)
-- [x] **시스템 프롬프트**: 전체 Kùzu Cypher 프롬프트 내용 포함
-- [x] **Python 코드**: Kùzu 로컬 DB 래퍼 클래스
+- [x] **Agent 계획**: docs/plan/ 내의 상세 설계 문서들
+- [x] **시스템 프롬프트**: 각 상세 계획서 내의 프롬프트 지침
 - [x] **테스트 데이터**: 통신사 요금제 실제 예시
 
 ### 외부 의존성
@@ -224,7 +241,7 @@ uv run adk web graph-designer-agent/main_agent/root_agent.yaml
 
 ## 🎓 다음 단계
 
-1. ✅ **지금**: `docs/Graph_Designer_ADK_Agent_Implementation_Plan.md` 읽기 시작
+1. ✅ **지금**: `docs/plan/00_overview_and_architecture.md` 읽기 시작
 2. ✅ **환경 설정**: uv 설치 및 가상환경 초기화
 3. ✅ **Agent 구현**: 계획서에 따라 `graph-designer-agent` 폴더 구조 및 파일 생성
 4. ✅ **테스트**: ADK 웹 UI 하단의 **클립 아이콘(첨부)**을 클릭하여 `examples/lgu_5g_plans_data.md` 파일을 업로드한 후, 프롬프트를 입력하여 스키마 자동 생성 검증
